@@ -347,7 +347,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .amount-box { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
 .amount-input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 0; font-family: var(--num); font-size: 52px; line-height: 60px; font-weight: 600; letter-spacing: -0.03em; color: var(--ink-12); }
 .amount-input::placeholder { color: var(--ink-9); }
-.amount-unit { font-family: var(--num); font-size: 24px; font-weight: 600; color: var(--ink-9); }
+.amount-unit { display: grid; place-items: center; flex: none; }
 .amount-usd { font-size: 15px; color: var(--ink-10); margin-top: 2px; }
 .privacy-row { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; background: var(--blue-3); }
 .privacy-row .privacy-ico { width: 40px; height: 40px; border-radius: 99px; display: grid; place-items: center; background: #fff; color: var(--blue-9); flex: none; }

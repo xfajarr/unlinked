@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowLeft, Check, ChevronRight, ClipboardPaste, Loader2, Wallet, X } from 'lucide-react'
 import { BCH_USD, PAYMENTS, fmtBch, fmtUsd, recordSent } from '../data'
-import { Avatar, Modal, TickSlider, SuccessMark, ModalCancel } from '../ui'
+import { Avatar, Modal, TickSlider, SuccessMark, ModalCancel, TokenIcon } from '../ui'
 import { go } from '../App'
 
 const FEE_PER_TX = 0.0000025
@@ -122,7 +122,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
               id="send-amount" className="amount-input tnum" inputMode="decimal" placeholder="0.00"
               value={amountStr} onChange={(e) => setAmountStr(e.target.value.replace(/[^0-9.]/g, '').slice(0, 12))}
             />
-            <span className="amount-unit">BCH</span>
+            <span className="amount-unit" aria-label="BCH"><TokenIcon token="BCH" size={36} /></span>
           </div>
           <div className="amount-usd tnum" style={over ? { color: 'var(--red-11)' } : undefined}>
             {over ? `More than your ${fmtBch(total)} BCH` : `≈ ${fmtUsd(amount * BCH_USD)}`}
