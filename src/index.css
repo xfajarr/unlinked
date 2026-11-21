@@ -882,6 +882,9 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   /* QR scales down instead of overflowing */
   .qr-wrap { padding: 14px !important; margin: 20px 0 !important; max-width: 100%; }
   .qr-wrap svg { width: 100% !important; height: auto !important; max-width: 240px; display: block; }
+  /* inside the glass halo keep the same even inset as desktop */
+  .qr-halo .qr-wrap { margin: 0 !important; padding: 16px !important; }
+  .qr-halo .qr-wrap svg { max-width: none; }
 
   /* sticky aside becomes normal flow */
   aside.card { position: static !important; }

@@ -109,16 +109,16 @@ export default function Pay({ raw }: { raw: string }) {
               <span className="url mono" style={{ fontSize: 14 }}>{addr}</span>
               <CopyButton text={addr} label="Copy deposit address" />
             </div>
-            <div className="badge blue" style={{ marginTop: 20, height: 36, padding: '0 16px', fontSize: 15 }}>
-              <Loader2 size={16} className="spin" />Waiting for payment
-            </div>
-            <div className="hstack" style={{ marginTop: 24 }}>
+            <div className="hstack" style={{ marginTop: 20 }}>
               {chain === 'bch' && <button className="btn btn-secondary md" style={{ flex: 1 }}><Wallet size={18} />Open wallet</button>}
               <button className="btn btn-primary md" style={{ flex: 1 }} onClick={() => { setPhase('swapping'); setTimeout(() => setPhase('done'), 2200) }}>
                 Simulate payment
               </button>
             </div>
             {chain !== 'bch' && <p className="help">If the swap fails, your {token} is refunded to a fresh address.</p>}
+            <div className="badge blue" style={{ marginTop: 20, height: 36, padding: '0 16px', fontSize: 15 }}>
+              <Loader2 size={16} className="spin" />Waiting for payment
+            </div>
           </div>
         )}
 

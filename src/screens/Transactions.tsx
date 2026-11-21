@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
-import { BCH_USD, PAYMENTS, SENT, TOKENS, fmtBch, fmtUsd, type Payment, type TokenId } from '../data'
+import { PAYMENTS, SENT, TOKENS, type Payment, type TokenId } from '../data'
 import { PaymentModal, PaymentRow } from './PaymentParts'
 import { TokenIcon } from '../ui'
 
@@ -24,12 +24,19 @@ export default function Transactions() {
   const [page, setPage] = useState(0)
   const [open, setOpen] = useState<Payment | null>(null)
 
-  const total = PAYMENTS.reduce((s, p) => s + p.bch, 0)
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     const all = [...SENT.map((s) => ({ ...s, minutesAgo: Math.max(0, Math.round((Date.now() - s.out!.at) / 60000)) })), ...PAYMENTS]
     return all.filter((p) => (token === 'all' || p.token === token) && (!needle || (p.note ?? 'payment received').toLowerCase().includes(needle)))
   }, [token, q])
+  const sentCount = filtered.filter((p) => p.out).length
+  const recvCount = filtered.length - sentCount
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+  const summary = q.trim()
+    ? `${plural(filtered.length, 'result')} for “${q.trim()}”`
+    : (sentCount
+        ? [recvCount && `${recvCount} received`, `${sentCount} sent`].filter(Boolean).join(' · ')
+        : recvCount ? `${plural(recvCount, 'payment')} received` : 'No payments') + (token === 'all' || !filtered.length ? '' : ` in ${token}`)
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE))
   const visible = filtered.slice(page * PAGE, page * PAGE + PAGE)
   const goPage = (n: number) => {
@@ -57,7 +64,7 @@ export default function Transactions() {
       <div className="page-head inline">
         <div>
           <h1 className="page-title">Activity</h1>
-          <p className="page-sub tnum">{PAYMENTS.length} payments · {fmtBch(total)} BCH · ≈ {fmtUsd(total * BCH_USD)}</p>
+          <p className="page-sub tnum">{summary}</p>
         </div>
       </div>
 
@@ -90,7 +97,6 @@ export default function Transactions() {
               <div key={g.key} className="day-group">
                 <div className="day-head">
                   <span>{dayLabel(g.key)}</span>
-                  <span className="tnum">{g.sum >= 0 ? '+' : '−'}{fmtBch(Math.abs(g.sum))} BCH</span>
                 </div>
                 <div className="rows">
                   {g.items.map((p) => <PaymentRow key={p.id} p={p} onOpen={setOpen} />)}
