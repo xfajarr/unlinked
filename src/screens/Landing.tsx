@@ -10,6 +10,22 @@ function Sparkle({ className }: { className: string }) {
   )
 }
 
+/** Letters drop in one after another. Words stay unbroken so wrapping is unchanged; `from` continues the stagger. */
+function Chars({ text, from = 0 }: { text: string; from?: number }) {
+  let i = from
+  return (
+    <>
+      {text.split(/(\s+)/).map((w, wi) =>
+        /^\s*$/.test(w) ? w : (
+          <span key={wi} className="st-w" aria-hidden>
+            {[...w].map((c) => <span key={i} className="st-c" style={{ ['--i' as string]: i++ }}>{c}</span>)}
+          </span>
+        ),
+      )}
+    </>
+  )
+}
+
 // raw address in, private payment out (the conveyor in the privacy section)
 const BELT = [
   { addr: 'bitcoincash:qz7x8m…4kfa', handle: 'rina', avatar: '/avatars/rina.jpg', note: 'Logo design', amt: '+0.0524' },
@@ -190,7 +206,7 @@ export default function Landing() {
 
         <div className="ld-hero2-copy px-copy">
           <span className="ld-eyebrow glass"><span className="dot" />Live on Bitcoin Cash</span>
-          <h1 className="ld-h1">Get paid from any chain.<br />Stay <span className="ld-pill">unlinked.</span></h1>
+          <h1 className="ld-h1 st" aria-label="Get paid from any chain. Stay unlinked."><Chars text="Get paid from any chain." /><br /><Chars text="Stay " from={24} /><span className="ld-pill"><Chars text="unlinked." from={28} /></span></h1>
           <p className="ld-lead">One link, any token. Every payment lands privately as BCH.</p>
           <div className="ld-ctas">
             <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
@@ -254,7 +270,7 @@ export default function Landing() {
       {/* showcase: three real app screens, then what you get */}
       <section className="ld-section reveal">
         <div className="ld-head">
-          <h2 className="ld-h2">Everything you need to get paid privately</h2>
+          <h2 className="ld-h2 st" aria-label="Everything you need to get paid privately"><Chars text="Everything you need to get paid privately" /></h2>
           <p className="ld-sub">Claim a name, share one link, watch payments arrive. All from your browser.</p>
         </div>
         {/* one frame: phones on top, each with its card underneath */}
@@ -284,7 +300,7 @@ export default function Landing() {
       {/* how it works */}
       <section className="ld-section reveal" id="how">
         <div className="ld-head">
-          <h2 className="ld-h2">Three steps to private payments</h2>
+          <h2 className="ld-h2 st" aria-label="Three steps to private payments"><Chars text="Three steps to private payments" /></h2>
           <p className="ld-sub">Set up in a minute. No wallet to install, no address to copy around.</p>
         </div>
         {/* timeline: a small picture of each step, numbered and joined by a line */}
@@ -323,7 +339,7 @@ export default function Landing() {
       <section className="ld-section reveal" id="privacy">
         <div className="ld-belt-wrap">
           <div className="ld-belt-copy">
-            <h2 className="ld-h1 ld-belt-h">Still pasting wallet addresses?</h2>
+            <h2 className="ld-h1 ld-belt-h st" aria-label="Still pasting wallet addresses?"><Chars text="Still pasting wallet addresses?" /></h2>
             <p className="ld-sub">Every time you share the same address, anyone can add up who paid you and how much. Unlinked gives you one @username, and every payment still lands at a fresh address.</p>
           </div>
           <Belt />
@@ -333,7 +349,7 @@ export default function Landing() {
       {/* faq: heading + help card on the left, accordion on the right */}
       <section className="ld-section ld-faq-sec reveal" id="faq">
         <div className="ld-faq-side">
-          <h2 className="ld-h2">Questions, answered</h2>
+          <h2 className="ld-h2 st" aria-label="Questions, answered"><Chars text="Questions, answered" /></h2>
           <p className="ld-sub">The short version of how privacy, payments and keys work.</p>
         </div>
         <div className="frame ld-faq2">
@@ -361,7 +377,7 @@ export default function Landing() {
           <Sparkle className="spark s3" />
         </div>
         <div className="ld-final-copy">
-          <h2 className="ld-h2">Your private link is a minute away</h2>
+          <h2 className="ld-h2 st" aria-label="Your private link is a minute away"><Chars text="Your private link is a minute away" /></h2>
           <p className="ld-sub">Claim your @username and start getting paid from any chain.</p>
           <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
         </div>

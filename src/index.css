@@ -1500,3 +1500,30 @@ body:has(.ld) { overflow-x: clip; }
   .ld-step2-line { display: none; }
 }
 @media (max-width: 767px) { .ld-step2-vis { height: 160px; border-radius: 24px; border-width: 5px; } }
+
+/* ---- text entrance: letters drop in one by one (hero on load, section titles when scrolled into view) ---- */
+.st-w { display: inline-block; white-space: nowrap; }
+.ld-h1 .st-w, .ld-h1 .st-c { color: inherit; } /* beat `.ld-h1 span` (blue accent) */
+.st-c { display: inline-block; opacity: 0; }
+.ld-hero2 .st-c, .reveal.in .st-c { animation: st-drop 640ms cubic-bezier(.23, 1, .32, 1) both; animation-delay: calc(var(--d, 120ms) + var(--i) * 26ms); }
+.reveal .st-c { --d: 140ms; }
+@keyframes st-drop { from { opacity: 0; transform: translateY(-0.42em); } to { opacity: 1; transform: none; } }
+/* the white pill behind "unlinked." grows in before its letters land */
+.ld-hero2 .ld-pill { animation: st-pill 520ms cubic-bezier(.23, 1, .32, 1) 760ms both; }
+@keyframes st-pill { from { opacity: 0; transform: scale(0.8); } }
+/* the rest of the hero follows the headline */
+.ld-hero2 .ld-eyebrow { animation: st-rise 600ms cubic-bezier(.23, 1, .32, 1) both; }
+.ld-hero2 .ld-lead { animation: st-rise 600ms cubic-bezier(.23, 1, .32, 1) 820ms both; }
+.ld-hero2 .ld-ctas { animation: st-rise 600ms cubic-bezier(.23, 1, .32, 1) 940ms both; }
+.ld-stage .px-card > .ld-phone { animation: st-phone 900ms cubic-bezier(.23, 1, .32, 1) 1000ms both; }
+.ld-stage .ld-float { animation: st-pop 640ms cubic-bezier(.23, 1, .32, 1) both; }
+.ld-stage .ld-float.f1 { animation-delay: 1250ms; } .ld-stage .ld-float.f3 { animation-delay: 1350ms; }
+.ld-stage .ld-float.f2 { animation-delay: 1450ms; } .ld-stage .ld-float.f4 { animation-delay: 1550ms; }
+@keyframes st-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes st-phone { from { opacity: 0; transform: translateY(80px); } }
+@keyframes st-pop { from { opacity: 0; transform: translateY(16px) scale(0.9); } }
+@media (prefers-reduced-motion: reduce) {
+  .st-c { opacity: 1; }
+  .ld-hero2 .st-c, .reveal.in .st-c, .ld-hero2 .ld-pill, .ld-hero2 .ld-eyebrow, .ld-hero2 .ld-lead, .ld-hero2 .ld-ctas,
+  .ld-stage .px-card > .ld-phone, .ld-stage .ld-float { animation: fade 200ms ease-out both; }
+}
