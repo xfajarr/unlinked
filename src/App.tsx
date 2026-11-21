@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState
 import { ArrowUpRight, History, House, Link2, Wallet } from 'lucide-react'
 import { Logo } from './ui'
 import Onboarding from './screens/Onboarding'
+import Landing from './screens/Landing'
 import Dashboard from './screens/Dashboard'
 import Transactions from './screens/Transactions'
 import LinkPage from './screens/LinkPage'
@@ -16,7 +17,12 @@ const Ctx = createContext<Store>({ user: null, setUser: () => {} })
 export const useStore = () => useContext(Ctx)
 
 const KEY = 'unlinked:user'
+// ?embed=1 renders the app as a showcase (landing page phone): fixed demo user, nothing saved
+export const EMBED = new URLSearchParams(window.location.search).has('embed')
+const EMBED_USER: User = { handle: 'rina', mnemonic: 'demo demo demo demo demo demo demo demo demo demo demo demo' }
+if (EMBED) document.documentElement.classList.add('embed')
 function load(): User | null {
+  if (EMBED) return EMBED_USER
   try {
     const raw = localStorage.getItem(KEY)
     return raw ? JSON.parse(raw) : null
@@ -108,6 +114,7 @@ export default function App() {
   const hash = useHash()
   const setUser = (u: User | null) => {
     setUserState(u)
+    if (EMBED) return
     try {
       if (u) localStorage.setItem(KEY, JSON.stringify(u))
       else localStorage.removeItem(KEY)
@@ -120,6 +127,9 @@ export default function App() {
   let chrome = true
   if (hash.startsWith('/pay/')) {
     page = <Pay raw={hash.slice(5)} />
+    chrome = false
+  } else if (path === '/landing' || (!user && (path === '/' || path === ''))) {
+    page = <Landing />
     chrome = false
   } else if (!user || path === '/onboarding') {
     page = <Onboarding />
@@ -162,7 +172,7 @@ export default function App() {
           </nav>
         )}
         {page}
-        <span className="badge neutral demo-chip"><span className="dot" style={{ color: '#f5a524' }} />Demo<span className="hide-sm"> · no real funds</span></span>
+        {!EMBED && <span className="badge neutral demo-chip"><span className="dot" style={{ color: '#f5a524' }} />Demo<span className="hide-sm"> · no real funds</span></span>}
       </div>
     </Ctx.Provider>
   )

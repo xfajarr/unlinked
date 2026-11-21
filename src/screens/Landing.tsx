@@ -1,0 +1,380 @@
+import { useEffect, useRef, useState } from 'react'
+import { ArrowRight, ArrowUpRight, Check, EyeOff, History, KeyRound, Link2, Plus, QrCode, Repeat, Unlink, Zap } from 'lucide-react'
+import { CHAINS, type ChainId, type TokenId } from '../data'
+import { Avatar, ChainIcon, TokenIcon } from '../ui'
+import { go, useStore } from '../App'
+
+function Sparkle({ className }: { className: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="#fff" aria-hidden><path d="M12 0c.6 6.2 5.8 11.4 12 12-6.2.6-11.4 5.8-12 12-.6-6.2-5.8-11.4-12-12C6.2 11.4 11.4 6.2 12 0z" /></svg>
+  )
+}
+
+// raw address in, private payment out (the conveyor in the privacy section)
+const BELT = [
+  { addr: 'bitcoincash:qz7x8m…4kfa', handle: 'rina', avatar: '/avatars/rina.jpg', note: 'Logo design', amt: '+0.0524' },
+  { addr: 'bitcoincash:qr9a2c…1mzt', handle: 'budi_design', avatar: '/avatars/budi_design.jpg', note: 'Brand kit', amt: '+0.1306' },
+  { addr: 'bitcoincash:qp3nd7…8c2d', handle: 'kopikenangan', avatar: '/avatars/kopikenangan.jpg', note: 'Coffee order', amt: '+0.0120' },
+  { addr: 'bitcoincash:qq5ev0…7hyx', handle: 'dimas', avatar: '', note: 'Consulting call', amt: '+0.6309' },
+  { addr: 'bitcoincash:qz2kf1…0vwe', handle: 'sari', avatar: '', note: 'Poster design', amt: '+0.5063' },
+  { addr: 'bitcoincash:qrm81x…3pla', handle: 'andre', avatar: '', note: 'Website copy', amt: '+0.2815' },
+]
+
+// second row of cards under the showcase
+const MORE = [
+  { icon: Repeat, title: 'Any token, any chain', body: 'Payers send USDC, USDT, ETH, SOL or BCH. It arrives as BCH, swapped through NEAR Intents.' },
+  { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with your PIN and backed up with 12 words. We never hold your money.' },
+  { icon: Zap, title: 'Fast and cheap', body: 'Bitcoin Cash settles in seconds for a fraction of a cent.' },
+]
+
+/** Cards drop one slot every tick: three raw addresses above the bar, three private @links below it. */
+function Belt() {
+  const [t, setT] = useState(6)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setT((n) => n + 1), 2200)
+    return () => clearInterval(id)
+  }, [])
+  const cards = []
+  for (let k = t - 6; k <= t; k++) {
+    const slot = t - k // 0..2 above the bar, 3..5 below, 6 leaving
+    const item = BELT[((k % BELT.length) + BELT.length) % BELT.length]
+    const done = slot >= 3
+    cards.push(
+      <div key={k} className={`ld-belt-card${done ? ' done' : ''}${slot === 3 ? ' fresh' : ''}${slot === 6 ? ' out' : ''}${slot === 0 ? ' in' : ''}`} style={{ ['--slot' as string]: Math.min(slot, 6) }}>
+        <span className={`ld-belt-mark${done ? ' on' : ''}`}><Check size={14} strokeWidth={3.2} /></span>
+        {/* both faces are rendered; they cross-fade as the card passes the bar */}
+        <div className="ld-belt-main">
+          <div className="ld-belt-face raw">
+            <div className="ld-belt-t mono">{item.addr}</div>
+            <div className="ld-belt-s">Same address for every client</div>
+          </div>
+          <div className="ld-belt-face ok">
+            <div className="ld-belt-t">unlinked.cash/<b>@{item.handle}</b></div>
+            <div className="ld-belt-s tnum">{item.amt} BCH · private</div>
+          </div>
+        </div>
+        <span className="ld-belt-av"><Avatar handle={item.handle} size={36} src={item.avatar || undefined} /></span>
+      </div>,
+    )
+  }
+  return (
+    <div className="ld-belt" aria-hidden>
+      {cards}
+      <div className="ld-belt-bar"><span className="ld-belt-badge"><span className="logo-mark"><Unlink size={14} strokeWidth={2.6} /></span>unlinked</span></div>
+    </div>
+  )
+}
+
+/** iPhone mockup showing a real app screen (the app in ?embed=1 mode). Decorative. */
+function Phone({ route, className = '' }: { route: string; className?: string }) {
+  return (
+    <div className={`ld-phone ${className}`} aria-hidden>
+      <span className="ld-btn-l b1" /><span className="ld-btn-l b2" /><span className="ld-btn-l b3" /><span className="ld-btn-r" />
+      <div className="ld-phone-screen">
+        <span className="ld-island" />
+        <iframe src={`/?embed=1#${route}`} title="Unlinked app preview" tabIndex={-1} />
+      </div>
+    </div>
+  )
+}
+
+const TOKEN_LIST: TokenId[] = ['BCH', 'USDC', 'USDT', 'ETH', 'SOL']
+const CHAIN_LIST: ChainId[] = ['bch', 'ethereum', 'base', 'arbitrum', 'solana', 'tron']
+
+const STEPS = [
+  { title: 'Claim your @username', body: 'Pick a name and set a PIN. Your keys are made on your device, not on our servers.' },
+  { title: 'Share one link', body: 'Send unlinked.cash/@you or show the QR. Add an amount and a note when you want to.' },
+  { title: 'Get paid privately', body: 'Every payment lands in a fresh BCH address that only you can find. Nobody can tie them together.' },
+]
+
+// one card per phone in the showcase, in the same order
+const SHOWCASE = [
+  { route: '/withdraw', side: 'left', icon: ArrowUpRight, title: 'Withdraw anytime', body: 'Move your BCH to Paytaca, Cashonize or any wallet you like, whenever you want.' },
+  { route: '/dashboard', side: 'mid', icon: EyeOff, title: 'One private balance', body: 'Every token you’re paid in adds up as BCH, at addresses only you can find.' },
+  { route: '/transactions', side: 'right', icon: History, title: 'Every payment, tracked', body: 'Search by note, filter by token and see what each payment was for.' },
+]
+
+const FAQ = [
+  { q: 'Who can see what I receive?', a: 'Only you. Each payment goes to a one-time address made from your keys. On the blockchain they look like unrelated addresses.' },
+  { q: 'Does the payer need a Bitcoin Cash wallet?', a: 'No. They can pay with stablecoins or other tokens from the wallet they already use. The swap to BCH happens on the way.' },
+  { q: 'What happens if a swap fails?', a: 'The payer’s tokens are refunded to a fresh address on their own chain. Nothing gets stuck in the middle.' },
+  { q: 'Is Unlinked custodial?', a: 'No. Your keys are created and stored on your device. If you lose it, your 12-word recovery phrase gets you back in.' },
+  { q: 'Which tokens can people pay with?', a: 'BCH, USDC, USDT, ETH and SOL across Bitcoin Cash, Ethereum, Base, Arbitrum, Solana and Tron. Everything arrives as BCH.' },
+  { q: 'How fast does money arrive?', a: 'BCH payments land in seconds. Payments from other chains wait for the swap, which usually takes a few minutes.' },
+]
+
+export default function Landing() {
+  const { user } = useStore()
+  const [open, setOpen] = useState<number | null>(0)
+  const start = () => go(user ? '/dashboard' : '/onboarding')
+  const root = useRef<HTMLDivElement>(null)
+  // nav shrinks into a floating glass pill once you leave the top
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 24)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+
+  // parallax: each .px-scope gets --p (-1 above centre … 1 below); layers move by their own factor in CSS
+  useEffect(() => {
+    const el = root.current
+    if (!el) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const scopes = [...el.querySelectorAll<HTMLElement>('.px-scope')]
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const vh = window.innerHeight
+      for (const s of scopes) {
+        const r = s.getBoundingClientRect()
+        if (r.bottom < -vh || r.top > vh * 2) continue
+        const p = Math.max(-1.5, Math.min(1.5, (r.top + r.height / 2 - vh / 2) / vh))
+        s.style.setProperty('--p', p.toFixed(4))
+      }
+      el.style.setProperty('--sy', String(Math.min(window.scrollY, 1200)))
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
+    if (!reduce) {
+      update()
+      window.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('resize', onScroll)
+    }
+    // reveal sections as they come into view
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target) }
+    }, { rootMargin: '0px 0px -12% 0px' })
+    el.querySelectorAll('.reveal').forEach((n) => io.observe(n))
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      cancelAnimationFrame(raf)
+      io.disconnect()
+    }
+  }, [])
+
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  return (
+    <div className="ld" ref={root}>
+      <header className={`ld-nav${scrolled ? ' scrolled' : ''}`}>
+        <div className="ld-nav-in">
+        <a className="logo" href="#/landing" style={{ textDecoration: 'none', color: 'inherit' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+          <span className="logo-mark"><Unlink size={18} strokeWidth={2.4} /></span>unlinked
+        </a>
+        <nav className="ld-links" aria-label="Sections">
+          <button onClick={() => scrollTo('how')}>How it works</button>
+          <button onClick={() => scrollTo('privacy')}>Privacy</button>
+          <button onClick={() => scrollTo('faq')}>FAQ</button>
+        </nav>
+        <button className="btn btn-primary md" onClick={start}>{user ? 'Open app' : 'Get your link'}</button>
+        </div>
+      </header>
+
+      {/* hero: centred copy, the app on an iPhone rising out of the panel, floating cards around it */}
+      <section className="ld-hero2 px-scope">
+        <div className="scene" aria-hidden>
+          <img className="scene-ribbon" src="/art/ribbon.webp" alt="" />
+          <img className="scene-ribbon two" src="/art/ribbon.webp" alt="" />
+          <img className="scene-globe" src="/art/globe.webp" alt="" />
+          <img className="coin coin-eth" src="/art/coin-eth.webp" alt="" />
+          <img className="coin coin-usdt" src="/art/coin-usdt.webp" alt="" />
+          <img className="coin coin-btc" src="/art/coin-btc.webp" alt="" />
+          <img className="coin coin-sol" src="/art/coin-sol.webp" alt="" />
+          <Sparkle className="spark s1" />
+          <Sparkle className="spark s2" />
+          <Sparkle className="spark s3" />
+        </div>
+
+        <div className="ld-hero2-copy px-copy">
+          <span className="ld-eyebrow glass"><span className="dot" />Live on Bitcoin Cash</span>
+          <h1 className="ld-h1">Get paid from any chain.<br />Stay <span className="ld-pill">unlinked.</span></h1>
+          <p className="ld-lead">One link, any token. Every payment lands privately as BCH.</p>
+          <div className="ld-ctas">
+            <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
+            <button className="btn ld-btn-glass" onClick={() => go('/pay/rina')}>See a pay page</button>
+          </div>
+        </div>
+
+        <div className="ld-stage">
+          <div className="px-card">
+            <div className="ld-phone" aria-hidden>
+              <span className="ld-btn-l b1" /><span className="ld-btn-l b2" /><span className="ld-btn-l b3" /><span className="ld-btn-r" />
+              <div className="ld-phone-screen">
+                <span className="ld-island" />
+                <iframe src="/?embed=1#/dashboard" title="Unlinked app preview" tabIndex={-1} />
+              </div>
+            </div>
+          </div>
+
+          {/* floating cards (decorative) */}
+          <div className="ld-float f1" aria-hidden>
+            <div className="ld-f-label">Just now</div>
+            <div className="ld-f-row">
+              <span className="ld-toast-ico"><Check size={16} strokeWidth={3} /></span>
+              <div>
+                <div className="ld-f-big tnum">+0.6247 BCH</div>
+                <div className="ld-f-sub">at a fresh address</div>
+              </div>
+            </div>
+          </div>
+          <div className="ld-float f2" aria-hidden>
+            <div className="ld-f-label">Paid with</div>
+            <div className="ld-f-swap">
+              <TokenIcon token="USDC" chain="base" size={36} />
+              <ArrowRight size={16} strokeWidth={2.4} className="ld-f-arrow" />
+              <TokenIcon token="BCH" size={36} />
+            </div>
+            <div className="ld-f-sub">120 USDC on Base → BCH</div>
+          </div>
+          <div className="ld-float f3" aria-hidden>
+            <div className="ld-f-label">Fresh addresses</div>
+            <div className="ld-f-big tnum">34</div>
+            <div className="ld-f-chip"><EyeOff size={13} strokeWidth={2.4} />0 linked</div>
+          </div>
+          <div className="ld-float f4" aria-hidden>
+            <div className="ld-f-label">Pay with any token</div>
+            <div className="ld-token-stack">{TOKEN_LIST.map((t) => <TokenIcon key={t} token={t} size={30} />)}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* chains strip */}
+      <section className="ld-strip2 reveal" aria-label="Supported chains">
+        <span className="ld-strip-label">Payers can send from</span>
+        <div className="ld-strip-row">
+          {CHAIN_LIST.map((c) => (
+            <span key={c} className="ld-chain2"><ChainIcon chain={c} size={26} />{CHAINS[c].name}</span>
+          ))}
+        </div>
+      </section>
+
+      {/* showcase: three real app screens, then what you get */}
+      <section className="ld-section reveal">
+        <div className="ld-head">
+          <h2 className="ld-h2">Everything you need to get paid privately</h2>
+          <p className="ld-sub">Claim a name, share one link, watch payments arrive. All from your browser.</p>
+        </div>
+        {/* one frame: phones on top, each with its card underneath */}
+        <div className="frame ld-show-frame px-scope">
+          <div className="ld-showcase">
+            <Sparkle className="spark s1" />
+            <Sparkle className="spark s2" />
+            <Sparkle className="spark s3" />
+            <div className="ld-phones">
+              {SHOWCASE.map((c) => (
+                <div key={c.route} className={`ld-ph ${c.side === 'mid' ? 'mid' : `side ${c.side}`}`}><Phone route={c.route} /></div>
+              ))}
+            </div>
+          </div>
+          <div className="ld-show-cards">
+            {[...SHOWCASE, ...MORE].map(({ icon: I, title, body }) => (
+              <div key={title} className="panel ld-feature2">
+                <span className="ld-ico2"><I size={20} strokeWidth={2.4} /></span>
+                <h3 className="ld-h3">{title}</h3>
+                <p className="ld-p">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* how it works */}
+      <section className="ld-section reveal" id="how">
+        <div className="ld-head">
+          <h2 className="ld-h2">Three steps to private payments</h2>
+          <p className="ld-sub">Set up in a minute. No wallet to install, no address to copy around.</p>
+        </div>
+        {/* timeline: a small picture of each step, numbered and joined by a line */}
+        <div className="ld-steps2">
+          {STEPS.map(({ title, body }, i) => (
+            <div key={title} className="ld-step2">
+              <div className="ld-step2-vis" aria-hidden>
+                {i === 0 && (
+                  <div className="ld-mini-field">
+                    <span className="ld-mini-at">@</span><span className="ld-mini-name">rina</span>
+                    <span className="ld-mini-ok"><Check size={12} strokeWidth={3} />Available</span>
+                  </div>
+                )}
+                {i === 1 && (
+                  <div className="ld-mini-stack">
+                    <div className="ld-mini-link"><span><span className="dim">unlinked.cash/</span>@rina</span><span className="ld-mini-copy"><Link2 size={14} strokeWidth={2.4} /></span></div>
+                    <div className="ld-mini-chips"><span><QrCode size={13} strokeWidth={2.4} />QR code</span><span>$120 · Logo</span></div>
+                  </div>
+                )}
+                {i === 2 && (
+                  <div className="ld-mini-pay">
+                    <span className="ld-toast-ico"><Check size={14} strokeWidth={3} /></span>
+                    <div><div className="ld-mini-amt tnum">+0.0524 BCH</div><div className="ld-mini-sub">fresh address · just now</div></div>
+                  </div>
+                )}
+              </div>
+              <div className="ld-step2-rail"><span className="ld-step2-n tnum">{i + 1}</span>{i < STEPS.length - 1 && <span className="ld-step2-line" />}</div>
+              <h3 className="ld-h3">{title}</h3>
+              <p className="ld-p">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* privacy: raw addresses flow down through the Unlinked bar and come out as private @links */}
+      <section className="ld-section reveal" id="privacy">
+        <div className="ld-belt-wrap">
+          <div className="ld-belt-copy">
+            <h2 className="ld-h1 ld-belt-h">Still pasting wallet addresses?</h2>
+            <p className="ld-sub">Every time you share the same address, anyone can add up who paid you and how much. Unlinked gives you one @username, and every payment still lands at a fresh address.</p>
+          </div>
+          <Belt />
+        </div>
+      </section>
+
+      {/* faq: heading + help card on the left, accordion on the right */}
+      <section className="ld-section ld-faq-sec reveal" id="faq">
+        <div className="ld-faq-side">
+          <h2 className="ld-h2">Questions, answered</h2>
+          <p className="ld-sub">The short version of how privacy, payments and keys work.</p>
+        </div>
+        <div className="frame ld-faq2">
+          {FAQ.map(({ q, a }, i) => (
+            <div key={q} className={`panel ld-qa2${open === i ? ' on' : ''}`}>
+              <button className="ld-q2" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+                <span className="ld-q2-n tnum">{String(i + 1).padStart(2, '0')}</span>
+                <span className="ld-q2-t">{q}</span>
+                <span className="ld-q2-ico" aria-hidden><Plus size={18} strokeWidth={2.4} /></span>
+              </button>
+              <div className="ld-a2"><div><p className="ld-p">{a}</p></div></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* footer: full-width blue band, CTA in the middle, brand / links / credit along the bottom */}
+      <footer className="ld-final ld-footer px-scope reveal">
+        <div className="scene" aria-hidden>
+          <img className="scene-globe" src="/art/globe.webp" alt="" />
+          <img className="scene-clouds" src="/art/clouds.webp" alt="" />
+          <img className="coin coin-eth" src="/art/coin-eth.webp" alt="" />
+          <img className="coin coin-sol" src="/art/coin-sol.webp" alt="" />
+          <Sparkle className="spark s1" />
+          <Sparkle className="spark s3" />
+        </div>
+        <div className="ld-final-copy">
+          <h2 className="ld-h2">Your private link is a minute away</h2>
+          <p className="ld-sub">Claim your @username and start getting paid from any chain.</p>
+          <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
+        </div>
+        <div className="ld-foot-row">
+          <span className="logo ld-foot-logo"><span className="logo-mark"><Unlink size={16} strokeWidth={2.4} /></span>unlinked</span>
+          <nav className="ld-foot-links" aria-label="Footer">
+            <button onClick={() => scrollTo('how')}>How it works</button>
+            <button onClick={() => scrollTo('privacy')}>Privacy</button>
+            <button onClick={() => scrollTo('faq')}>FAQ</button>
+          </nav>
+          <span className="ld-foot-credit">Built for BCH BLAZE 2026</span>
+        </div>
+      </footer>
+    </div>
+  )
+}
