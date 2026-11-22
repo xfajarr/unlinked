@@ -8,12 +8,13 @@ import { useNow } from '../app/hooks'
 type Tone = 'live' | 'warn' | 'ok' | 'quiet'
 
 export function useStatus(e: Entry): { label: string; tone: Tone } | null {
-  const { items, shielding, minShield, history } = useAccount()
+  const { items, shielding, minShield, history, autoShield } = useAccount()
   if (e.kind !== 'in') return null
   if (shielding?.address === e.id) return { label: 'Making it private', tone: 'live' }
   const live = items?.find((r) => r.address === e.id)
   if (live?.pending) return { label: 'Arriving', tone: 'live' }
-  if (live) return minShield !== null && live.pusd === 0 && live.sats < minShield ? { label: 'Too small to make private', tone: 'warn' } : null
+  if (live && minShield !== null && live.pusd === 0) return live.sats < minShield ? { label: 'Too small to make private', tone: 'warn' } : autoShield ? null : { label: 'Regular', tone: 'quiet' }
+  if (live) return null
   if (history.some((h) => h.kind === 'shield' && h.to === e.id)) return { label: 'Private', tone: 'ok' }
   return items ? { label: 'Moved', tone: 'quiet' } : null
 }

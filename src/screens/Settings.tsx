@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server, Timer } from 'lucide-react'
+import { Check, ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server, ShieldCheck, Timer } from 'lucide-react'
 import { Avatar, CopyButton, Modal, ModalCancel, Switch } from '../ui'
 import { go } from '../App'
 import { useAccount } from '../app/account'
@@ -8,6 +8,7 @@ import { errMsg, fmtBch, linkHost } from '../app/format'
 import { PinEntry } from '../app/Pin'
 import { revealWords } from '../app/vaultio'
 import { FULCRUM_SERVERS, NETWORK } from '../lib/config'
+import { SHIELD_LIVE } from '../lib/shield/deployment'
 import { AUTOLOCK_OPTIONS, getAutoLock } from '../lib/session'
 import { forget, lock, markBackedUp, setAutoLock, vaultKind, type VaultKind } from '../lib/vault'
 
@@ -74,7 +75,7 @@ export function RecoveryPhrase({ backedUp, kind, onDone }: { backedUp: boolean; 
 }
 
 export default function Settings() {
-  const { stored, history, rescan, items } = useAccount()
+  const { stored, history, rescan, items, autoShield, setAutoShield } = useAccount()
   const [modal, setModal] = useState<'phrase' | 'servers' | 'forget' | 'autolock' | null>(() =>
     new URLSearchParams(window.location.search).has('backup') ? 'phrase' : null,
   )
@@ -97,6 +98,22 @@ export default function Settings() {
       </div>
 
       <button className="btn btn-primary block" onClick={() => go('/link')}>Share your link</button>
+
+      {SHIELD_LIVE && (
+        <>
+          <h2 className="soft" style={{ fontSize: 19, fontWeight: 500, letterSpacing: '-0.015em', margin: '40px 4px 14px' }}>Privacy</h2>
+          <div className="list-card">
+            <label className="nav-row set-toggle">
+              <span className="ico"><ShieldCheck size={24} /></span>
+              <span className="set-toggle-text">
+                Make payments private automatically
+                <small>{autoShield ? 'Each payment moves into Shield as it lands, for a fee of about 32,000 sats.' : 'Payments stay Regular until you tap Make private on Home.'}</small>
+              </span>
+              <Switch on={autoShield} onChange={setAutoShield} label="Make payments private automatically" />
+            </label>
+          </div>
+        </>
+      )}
 
       <h2 className="soft" style={{ fontSize: 19, fontWeight: 500, letterSpacing: '-0.015em', margin: '40px 4px 14px' }}>Account</h2>
       <div className="list-card">

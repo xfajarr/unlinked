@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, ChevronRight, Clock, Copy, Info, KeyRound, ScanLine, ShieldCheck } from 'lucide-react'
+import { Check, ChevronRight, Copy, Info, KeyRound, Loader2, ScanLine, ShieldCheck, Wallet } from 'lucide-react'
 import Scanner from './Scanner'
-import { Modal, RollingNumber, TokenIcon } from '../ui'
+import { Modal, ModalCancel, RollingNumber, TokenIcon, useModalClose } from '../ui'
 import { PaymentModal, PaymentRow } from './PaymentParts'
 import { go } from '../App'
 import { useAccount } from '../app/account'
 import type { Entry } from '../app/history'
 import { fmtBch, fmtPusd, fmtUsd, linkFor, linkHost } from '../app/format'
 import { ShieldingCard } from '../app/ShieldParts'
+import { useStoredState } from '../app/hooks'
+import { SHIELD_FEE_SATS } from '../lib/config'
 import { SHIELD_LIVE } from '../lib/shield/deployment'
 import { vaultKind, type VaultKind } from '../lib/vault'
 import { RecoveryPhrase } from './Settings'
@@ -40,8 +42,9 @@ function BackupGate({ kind }: { kind: VaultKind }) {
 }
 
 function BalanceInfo({ onClose }: { onClose: () => void }) {
+  const { autoShield } = useAccount()
   return (
-    <Modal title="Private and arriving" onClose={onClose}>
+    <Modal title="Private and regular" onClose={onClose}>
       <div className="bal-info">
         <div className="bal-info-row">
           <span className="bal-ico private"><ShieldCheck size={18} strokeWidth={2.4} /></span>
@@ -51,10 +54,10 @@ function BalanceInfo({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="bal-info-row">
-          <span className="bal-ico arriving"><Clock size={18} strokeWidth={2.4} /></span>
+          <span className="bal-ico regular"><Wallet size={18} strokeWidth={2.4} /></span>
           <div>
-            <h3>Arriving</h3>
-            <p>Payments that just landed at your one-time addresses. They already look unrelated to you on-chain, and the app moves each one into Shield for you, for a fee of about 32,000 sats (a few cents). Payments under about 37,000 sats stay here, because shielding them would cost more than they are worth.</p>
+            <h3>Regular</h3>
+            <p>Payments at your one-time addresses. On-chain they look unrelated to you, but they are not in the pool yet. {autoShield ? 'The app moves each one into Shield for you' : 'Tap Make private to move them into Shield'}, for a fee of about 32,000 sats (a few cents). Payments under about 37,000 sats stay here, because shielding them would cost more than they are worth.</p>
           </div>
         </div>
       </div>
@@ -62,14 +65,74 @@ function BalanceInfo({ onClose }: { onClose: () => void }) {
   )
 }
 
+type Tab = 'private' | 'regular'
+const isTab = (v: unknown): v is Tab => v === 'private' || v === 'regular'
+
+function BalanceToggle({ tab, onChange, flowing }: { tab: Tab; onChange: (t: Tab) => void; flowing: boolean }) {
+  return (
+    <div className={`bal-seg${flowing ? ' flowing' : ''}`} role="tablist" aria-label="Balance" data-tab={tab}>
+      <span className="bal-seg-pill" aria-hidden />
+      {flowing && <span className="bal-seg-coin" aria-hidden />}
+      {(['private', 'regular'] as const).map((t) => (
+        <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => onChange(t)}>
+          {t === 'private' ? <ShieldCheck size={15} strokeWidth={2.4} /> : <Wallet size={15} strokeWidth={2.4} />}
+          {t === 'private' ? 'Private' : 'Regular'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const satsLabel = (n: number) => `${n.toLocaleString('en-US')} sats`
+
+function MakePrivateConfirm({ onConfirm }: { onConfirm: () => void }) {
+  const { shieldReady, shield, price, sats: bal } = useAccount()
+  const close = useModalClose()
+  const fee = (shield.fees?.deposit ?? SHIELD_FEE_SATS) * shieldReady.count
+  const left = bal.arriving - shieldReady.sats
+  return (
+    <>
+      <p className="mp-lead">Moves <b className="tnum">{fmtBch(shieldReady.sats)} BCH</b> into Shield{shieldReady.count > 1 ? `, in ${shieldReady.count} transactions (one per payment)` : ''}. Fee about <span className="tnum">{satsLabel(fee)}</span>{price ? <> (≈&nbsp;<span className="tnum">{fmtUsd((fee / 1e8) * price)}</span>)</> : null}.</p>
+      {left > 0 && <p className="muted ap-small" style={{ marginTop: 10 }}><span className="tnum">{fmtBch(left)} BCH</span> stays regular: too small to be worth the fee.</p>}
+      <p className="muted ap-small" style={{ marginTop: 10 }}>The proof is made on this device and takes about half a minute{shieldReady.count > 1 ? ' per payment' : ''}. You can keep using the app.</p>
+      <div className="hstack" style={{ marginTop: 24 }}>
+        <ModalCancel className="btn btn-secondary md" style={{ flex: 1 }}>Cancel</ModalCancel>
+        <button className="btn btn-primary md" style={{ flex: 1 }} onClick={() => { onConfirm(); close() }}><ShieldCheck size={18} strokeWidth={2.4} />Make private</button>
+      </div>
+    </>
+  )
+}
+
+function RegularAction({ onMakePrivate }: { onMakePrivate: () => void }) {
+  const { shielding, shieldReady, autoShield, sats: bal } = useAccount()
+  if (shielding) return <span className="bc-note live"><Loader2 size={14} strokeWidth={2.6} className="spin" />Making {fmtBch(shielding.sats)} BCH private</span>
+  if (shieldReady.count > 0) return <button type="button" className="btn btn-shield sm" onClick={onMakePrivate}><ShieldCheck size={16} strokeWidth={2.4} />Make private</button>
+  if (bal.arriving > 0) return <span className="bc-note">Too small to make private (fee would cost more than it’s worth)</span>
+  return <span className="bc-note">{autoShield ? 'New payments move to Private automatically' : 'New payments stay here until you make them private'}</span>
+}
+
 export default function Dashboard() {
-  const { stored, items, error, poll, shield, shielding, sats, price, history } = useAccount()
+  const { stored, items, error, poll, shield, shielding, shieldNow, sats, price, history } = useAccount()
   const [scanning, setScanning] = useState(false)
   const [open, setOpen] = useState<Entry | null>(null)
   const loading = items === null || (SHIELD_LIVE && shield.sats === null && !shield.error)
   const recent = history.filter((e) => e.kind === 'in').slice(0, 5)
   const totalUsd = price ? (sats.total / 1e8) * price + sats.pusd : null
   const [info, setInfo] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [tab, setTabStored] = useStoredState<Tab>('unlinked.balanceTab', 'private', isTab)
+  const switched = useRef(false)
+  const setTab = (t: Tab) => {
+    if (t === tab) return
+    switched.current = true
+    setTabStored(t)
+  }
+  const regularUsd = price ? (sats.arriving / 1e8) * price + sats.pusd : null
+  const privateUsd = price ? (sats.private / 1e8) * price : null
+  const shownUsd = tab === 'private' ? privateUsd : regularUsd
+  const shownSats = tab === 'private' ? sats.private : sats.arriving
+  const arrivingSats = items?.reduce((s, r) => s + (r.pending && r.pusd === 0 ? r.sats : 0), 0) ?? 0
+  const privateDown = shield.error !== null && shield.sats === null
 
   return (
     <main className="main" style={{ maxWidth: 720 }}>
@@ -99,38 +162,58 @@ export default function Dashboard() {
             <span className="cp-shadow" />
             <span className="cp-glass" />
           </span>
-          <div className="bc-head">
-            <h2 className="bc-title">{SHIELD_LIVE ? 'Balance' : 'Private balance'}</h2>
-          </div>
-
-          <div className="bc-figure">
-            {loading ? (
-              <div className="ap-skel ap-skel-hero" aria-label="Loading balance" />
-            ) : (
-              totalUsd !== null
-                ? <div className="hero-num bc-num"><span className="bc-cur">$</span><RollingNumber value={heroUsd(totalUsd)} /></div>
-                : <div className="hero-num bc-num"><RollingNumber value={heroBch(sats.total)} /><small> BCH</small></div>
-            )}
-            {SHIELD_LIVE ? (
-              shield.error && shield.sats === null ? (
-                <div className="bc-sub">Can’t check your private balance right now</div>
-              ) : (
-                <div className="bal-split">
-                  <button type="button" className="bal-chip private" onClick={() => setInfo(true)} title="Private: inside Unlinked Shield, hidden from everyone">
-                    <ShieldCheck size={14} strokeWidth={2.4} /><span className="tnum">{fmtBch(sats.private)} BCH</span> private
-                  </button>
-                  <button type="button" className="bal-chip arriving" onClick={() => setInfo(true)} title="Arriving: just paid to your one-time addresses, being made private">
-                    <Clock size={14} strokeWidth={2.4} /><span className="tnum">{fmtBch(sats.arriving)} BCH</span> arriving
-                  </button>
-                  <button type="button" className="bal-info-btn" onClick={() => setInfo(true)} aria-label="What do private and arriving mean?" title="What do private and arriving mean?">
-                    <Info size={16} strokeWidth={2.4} />
-                  </button>
+          {SHIELD_LIVE ? (
+            <>
+              <div className="bc-head">
+                <BalanceToggle tab={tab} onChange={setTab} flowing={!!shielding} />
+              </div>
+              <div className="bc-figure">
+                {loading ? (
+                  <div className="ap-skel ap-skel-hero" aria-label="Loading balance" />
+                ) : (
+                  shownUsd !== null
+                    ? <div className="hero-num bc-num"><span className="bc-cur">$</span><RollingNumber value={heroUsd(shownUsd)} /></div>
+                    : <div className="hero-num bc-num"><RollingNumber value={heroBch(shownSats)} /><small> BCH</small></div>
+                )}
+                <div key={tab} className={`bc-swap${switched.current ? ' anim' : ''}`} data-tab={tab}>
+                  <div className="bc-sub bc-line">
+                    {tab === 'private' && privateDown ? (
+                      <span>Can’t check your private balance right now</span>
+                    ) : (
+                      <span className="tnum">
+                        {loading ? ' ' : <>{fmtBch(shownSats)} BCH{tab === 'regular' && sats.pusd > 0 ? ` and ${fmtPusd(sats.pusd)} PUSD` : ''} {tab}, total {totalUsd !== null ? fmtUsd(totalUsd) : `${fmtBch(sats.total)} BCH`}</>}
+                      </span>
+                    )}
+                    {tab === 'regular' && arrivingSats > 0 && <span className="bc-arriving tnum" title="Not confirmed on-chain yet">{fmtBch(arrivingSats)} arriving</span>}
+                    <button type="button" className="bal-info-btn" onClick={() => setInfo(true)} aria-label="What do private and regular mean?" title="What do private and regular mean?">
+                      <Info size={16} strokeWidth={2.4} />
+                    </button>
+                  </div>
+                  <div className="bc-slot">
+                    {loading ? null : tab === 'private'
+                      ? <span className="bc-note private"><ShieldCheck size={14} strokeWidth={2.6} />Hidden in Unlinked Shield</span>
+                      : <RegularAction onMakePrivate={() => setConfirm(true)} />}
+                  </div>
                 </div>
-              )
-            ) : (
-              <div className="bc-sub tnum">{loading ? ' ' : 'Paid to one-time addresses only you can find'}</div>
-            )}
-          </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bc-head">
+                <h2 className="bc-title">Private balance</h2>
+              </div>
+              <div className="bc-figure">
+                {loading ? (
+                  <div className="ap-skel ap-skel-hero" aria-label="Loading balance" />
+                ) : (
+                  totalUsd !== null
+                    ? <div className="hero-num bc-num"><span className="bc-cur">$</span><RollingNumber value={heroUsd(totalUsd)} /></div>
+                    : <div className="hero-num bc-num"><RollingNumber value={heroBch(sats.total)} /><small> BCH</small></div>
+                )}
+                <div className="bc-sub tnum">{loading ? ' ' : 'Paid to one-time addresses only you can find'}</div>
+              </div>
+            </>
+          )}
 
           <div className="bc-actions">
             <button className="btn btn-primary" onClick={() => go('/send')}>Send</button>
@@ -140,6 +223,11 @@ export default function Dashboard() {
         </section>
 
         {info && <BalanceInfo onClose={() => setInfo(false)} />}
+        {confirm && (
+          <Modal title="Make private?" onClose={() => setConfirm(false)}>
+            <MakePrivateConfirm onConfirm={shieldNow} />
+          </Modal>
+        )}
         {!stored.backedUp && !loading && (sats.total > 0 || history.some((e) => e.kind === 'in')) && <BackupGate kind={vaultKind(stored)} />}
         {shielding && <ShieldingCard sats={shielding.sats} progress={shielding.progress} />}
 
@@ -152,7 +240,7 @@ export default function Dashboard() {
               <TokenIcon token="BCH" size={40} />
               <div className="row-main">
                 <div className="row-title">Bitcoin Cash</div>
-                <div className="row-meta">{SHIELD_LIVE ? 'Private and arriving' : 'At one-time addresses'}</div>
+                <div className="row-meta">{SHIELD_LIVE ? 'Private and regular' : 'At one-time addresses'}</div>
               </div>
               <div className="row-end">
                 <div className="row-amt tnum">{loading ? '…' : fmtBch(sats.total)} BCH</div>

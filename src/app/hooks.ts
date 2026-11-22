@@ -83,7 +83,7 @@ export function useInbox(keys: ReceiverKeys | null, nonce = 0) {
 // libauth, circomlibjs, shield/tx and the prover worker load only when Shield is live
 const shieldSession = () => (import.meta.env.SSR ? Promise.reject(new Error('browser only')) : import('../lib/shield/session'))
 
-export type ShieldFeeView = { send: number; withdraw: number; minShield: number }
+export type ShieldFeeView = { deposit: number; send: number; withdraw: number; minShield: number }
 export type ShieldBalance = { sats: number | null; error: string | null; fees: ShieldFeeView | null; refresh: () => void }
 
 let preloaded = false
@@ -131,46 +131,93 @@ export function useShield(keys: ReceiverKeys | null): ShieldBalance {
 
 export type Shielding = { address: string; sats: number; progress: ShieldTxProgress | null }
 
+export function useStoredState<T>(key: string, fallback: T, valid: (v: unknown) => v is T): [T, (v: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key)
+      const v: unknown = raw === null ? fallback : JSON.parse(raw)
+      return valid(v) ? v : fallback
+    } catch {
+      return fallback
+    }
+  })
+  const set = useCallback((v: T) => {
+    setValue(v)
+    try {
+      localStorage.setItem(key, JSON.stringify(v))
+    } catch {}
+  }, [key])
+  return [value, set]
+}
+
+type Coin = { id: string; r: Received; u: Received['utxos'][number] }
+
+/** Stealth BCH coins worth making private: one pool transaction each, payments are never merged. */
+const shieldable = (items: Received[] | null, minShield: number | null): Coin[] =>
+  !items || minShield === null
+    ? []
+    : items.flatMap((r) => (r.pusd > 0 ? [] : r.utxos.filter((u) => !u.token_data && u.value >= minShield).map((u) => ({ id: `${u.tx_hash}:${u.tx_pos}`, r, u }))))
+
+export type ShieldQueue = {
+  active: Shielding | null
+  /** BCH coins that can go into the pool now, and their total */
+  ready: { count: number; sats: number }
+  /** Shields every ready coin, through the same queue auto-shield uses */
+  shieldNow: () => void
+}
+
 /**
- * Shield by default: every stealth BCH coin worth it goes into the pool, one transaction per coin (payments are never
- * merged) and one at a time. Chain state is the queue: an unspent stealth coin still needs shielding, so a reload
- * picks up where it left off. Coins below `fees.minShield` stay where they are.
+ * Moves stealth BCH coins into the pool, one transaction per coin and one at a time. With `auto` on, every coin worth it
+ * goes in; with it off, only the coins `shieldNow` picked. Chain state is the queue: an unspent stealth coin still needs
+ * shielding, so a reload picks up where it left off. Coins below `fees.minShield` stay where they are.
  */
-export function useAutoShield(items: Received[] | null, shield: ShieldBalance, onDone: (r: Received, sats: number, txid: string) => void): Shielding | null {
+export function useShieldQueue(items: Received[] | null, shield: ShieldBalance, auto: boolean, onDone: (r: Received, sats: number, txid: string) => void): ShieldQueue {
   const toast = useToast()
   const [active, setActive] = useState<Shielding | null>(null)
+  const [wanted, setWanted] = useState<ReadonlySet<string>>(() => new Set())
   const tried = useRef(new Set<string>())
-  const busy = useRef(false)
+  const done = useRef(new Set<string>())
+  const busy = useRef<string | null>(null)
   const minShield = shield.fees?.minShield ?? null
+  const coins = useMemo(() => shieldable(items, minShield), [items, minShield])
 
   useEffect(() => {
-    if (!SHIELD_LIVE || !items || minShield === null || busy.current) return
-    const next = items
-      .flatMap((r) => (r.pusd > 0 ? [] : r.utxos.filter((u) => !u.token_data && u.value >= minShield).map((u) => ({ r, u }))))
-      .find(({ u }) => !tried.current.has(`${u.tx_hash}:${u.tx_pos}`))
+    if (!SHIELD_LIVE || busy.current) return
+    const next = coins.find((c) => (auto || wanted.has(c.id)) && !tried.current.has(c.id))
     if (!next) return
-    const id = `${next.u.tx_hash}:${next.u.tx_pos}`
+    const { id, r, u } = next
     tried.current.add(id)
-    busy.current = true
-    const sats = next.u.value
-    setActive({ address: next.r.address, sats, progress: null })
+    busy.current = id
+    const sats = u.value
+    setActive({ address: r.address, sats, progress: null })
     ;(async () => {
       try {
         const s = await shieldSession()
-        const txid = await s.submitShieldTx({ kind: 'deposit', coin: { utxo: next.u, match: next.r.match } }, (progress) => setActive({ address: next.r.address, sats, progress }))
+        const txid = await s.submitShieldTx({ kind: 'deposit', coin: { utxo: u, match: r.match } }, (progress) => setActive({ address: r.address, sats, progress }))
+        done.current.add(id)
         toast(`Your ${fmtBch(sats)} BCH payment is now private`)
         shield.refresh()
-        onDone(next.r, sats, txid)
+        onDone(r, sats, txid)
       } catch (e) {
         toast(`Couldn't make a payment private yet: ${errMsg(e)}`, { error: true })
         // try this coin again in a minute (the pool may have moved, or the server lagged)
         setTimeout(() => tried.current.delete(id), 60_000)
       } finally {
-        busy.current = false
+        busy.current = null
         setActive(null)
+        setWanted((w) => {
+          const n = new Set(w)
+          n.delete(id)
+          return n
+        })
       }
     })()
-  }, [items, minShield])
+  }, [coins, auto, wanted])
 
-  return active
+  const open = coins.filter((c) => c.id !== busy.current && !done.current.has(c.id))
+  const shieldNow = () => {
+    for (const c of open) tried.current.delete(c.id)
+    setWanted(new Set(open.map((c) => c.id)))
+  }
+  return { active, ready: { count: open.length, sats: open.reduce((s, c) => s + c.u.value, 0) }, shieldNow }
 }

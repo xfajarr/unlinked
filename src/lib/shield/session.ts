@@ -51,7 +51,7 @@ export type ShieldView = {
   notes: OwnNote[]
   deployed: boolean
   /** network fees in sats; `minShield` is the smallest coin worth making private */
-  fees: { send: number; withdraw: number; minShield: number } | null
+  fees: { deposit: number; send: number; withdraw: number; minShield: number } | null
 }
 
 async function view(s: Session): Promise<ShieldView> {
@@ -61,7 +61,7 @@ async function view(s: Session): Promise<ShieldView> {
     notes: s.wallet.notes,
     deployed: !!s.deployment,
     // a coin must leave a note after the deposit fee, plus a margin so the note is worth spending later
-    fees: f && { send: Number(f.send), withdraw: Number(f.withdraw()), minShield: Number(f.deposit) + 5_000 },
+    fees: f && { deposit: Number(f.deposit), send: Number(f.send), withdraw: Number(f.withdraw()), minShield: Number(f.deposit) + 5_000 },
   }
 }
 

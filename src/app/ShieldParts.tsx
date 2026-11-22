@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Wallet } from 'lucide-react'
 import { progressFraction, progressLabel, type ShieldTxProgress } from '../lib/shield/progress'
 import { fmtBch } from './format'
 
@@ -24,7 +24,7 @@ const Bar = ({ pct, label }: { pct: number; label: string }) => (
   </div>
 )
 
-/** While a received payment moves into the private balance. Never blocks the app. */
+/** While a received payment moves into the private balance: a coin travels from Regular to Private. Never blocks the app. */
 export function ShieldingCard({ sats, progress }: { sats: number; progress: ShieldTxProgress | null }) {
   const { pct, label } = useProofProgress(progress)
   return (
@@ -34,7 +34,14 @@ export function ShieldingCard({ sats, progress }: { sats: number; progress: Shie
         <span className="ap-shielding-t">Making {fmtBch(sats)} BCH private</span>
         <span className="muted tnum" style={{ marginLeft: 'auto', fontSize: 14 }}>{pct}%</span>
       </div>
-      <Bar pct={pct} label="Making it private" />
+      <div className="ap-flow">
+        <span className="ap-flow-end"><Wallet size={14} strokeWidth={2.4} />Regular</span>
+        <div className="ap-flow-track" role="progressbar" aria-label="Making it private" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+          <span className="ap-flow-fill" style={{ width: `${pct}%` }} />
+          <span className="ap-flow-coin" style={{ left: `${pct}%` }} />
+        </div>
+        <span className="ap-flow-end private"><ShieldCheck size={14} strokeWidth={2.4} />Private</span>
+      </div>
       <p className="muted ap-small">{label}. You can keep using the app.</p>
     </section>
   )

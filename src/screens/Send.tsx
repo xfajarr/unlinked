@@ -13,7 +13,7 @@ import type { ShieldTxProgress } from '../lib/shield/progress'
 import { sendToHandle, withdraw as withdrawCoins } from '../lib/spend'
 
 type Lookup = { s: 'idle' } | { s: 'checking' } | { s: 'found'; p: Profile } | { s: 'none' } | { s: 'self' } | { s: 'error' }
-type From = 'Private' | 'Arriving'
+type From = 'Private' | 'Regular'
 // sendToHandle spends one payment and needs about this much on top of the amount for the fee and change
 const SEND_MARGIN = 2000
 // P2PKH, one input and up to three outputs at 1.1 sat/B (src/lib/spend.ts FEE_RATE)
@@ -42,10 +42,10 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
 
   const fee = (isWithdraw ? shield.fees?.withdraw : shield.fees?.send) ?? SHIELD_FEE_SATS
   const availPriv = SHIELD_LIVE ? Math.max(0, (shield.sats ?? 0) - fee) : 0
-  const [from, setFrom] = useState<From>('Arriving')
+  const [from, setFrom] = useState<From>('Regular')
   const touched = useRef(false)
   useEffect(() => {
-    if (!touched.current && SHIELD_LIVE) setFrom(availPriv > 0 ? 'Private' : 'Arriving')
+    if (!touched.current && SHIELD_LIVE) setFrom(availPriv > 0 ? 'Private' : 'Regular')
   }, [availPriv])
   const fromPrivate = SHIELD_LIVE && from === 'Private'
 
@@ -163,7 +163,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
   const fromNote = fromPrivate
     ? `${fmtBch(availPriv)} BCH private, after a ${fmtBch(fee)} BCH network fee`
     : sweep
-      ? `${sumLabel(list) || '0 BCH'} ${SHIELD_LIVE ? 'arriving' : 'to withdraw'}`
+      ? `${sumLabel(list) || '0 BCH'} ${SHIELD_LIVE ? 'regular' : 'to withdraw'}`
       : `Up to ${fmtBch(maxSingle)} BCH in one payment`
 
   return (
@@ -181,7 +181,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
           <section className="card send-section">
             <div className="hstack" style={{ justifyContent: 'space-between' }}>
               <span className="send-title">From</span>
-              <Segmented label="Pay from" options={['Private', 'Arriving'] as From[]} value={from} onChange={(v) => { touched.current = true; setFrom(v); setAmountStr('') }} />
+              <Segmented label="Pay from" options={['Private', 'Regular'] as From[]} value={from} onChange={(v) => { touched.current = true; setFrom(v); setAmountStr('') }} />
             </div>
             <p className="send-note" style={{ margin: 0 }}>
               {fromPrivate ? 'Your private balance. The amount and both sides stay hidden.' : 'Payments still at their one-time addresses.'}
@@ -216,7 +216,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
                 {look.s === 'none' && <span className="ap-err-text">No one has that name</span>}
                 {look.s === 'self' && <span className="ap-err-text">That’s you. Pick someone else.</span>}
                 {look.s === 'error' && <span className="ap-err-text">Couldn’t look that up. Try again.</span>}
-                {look.s === 'found' && noShield && <span className="ap-err-text">@{look.p.handle} hasn’t set up a private balance yet. Send from Arriving instead.</span>}
+                {look.s === 'found' && noShield && <span className="ap-err-text">@{look.p.handle} hasn’t set up a private balance yet. Send from Regular instead.</span>}
                 {look.s === 'found' && !noShield && <><span className="badge green"><Check size={13} strokeWidth={2.8} />@{look.p.handle}</span>Key fingerprint <span className="mono">{look.p.fingerprint}</span></>}
               </p>
             ) : recent.length > 0 ? (
@@ -243,7 +243,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
             {items === null ? (
               <div className="ap-skel ap-skel-row" />
             ) : list.length === 0 ? (
-              <p className="send-note" style={{ margin: 0 }}>{SHIELD_LIVE ? 'Nothing arriving right now. Your payments are in your private balance.' : 'Nothing to withdraw yet. Payments show up here once they arrive.'}</p>
+              <p className="send-note" style={{ margin: 0 }}>{SHIELD_LIVE ? 'No regular balance right now. Your payments are in your private balance.' : 'Nothing to withdraw yet. Payments show up here once they arrive.'}</p>
             ) : (
               <div className="rows">
                 {list.map((r) => {
