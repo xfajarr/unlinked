@@ -72,45 +72,22 @@ flowchart LR
 
 In the app you get one balance in USD, split into private (in the pool) and arriving (landed, not shielded yet). Auto-shield is on by default, with a switch in Settings. The wallet has a PIN lock with an auto-lock timer you pick. The pay page saves its step, so a payer who refreshes during a cross-chain deposit comes back to the same screen.
 
-## PUSD bridge
+## Stablecoin bridge
 
-[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves dollars between stablecoins on other chains and PUSD (ParyonUSD) on Bitcoin Cash, in both directions, with no account. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and PUSD.
+[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves dollars between stablecoins on other chains and Bitcoin Cash, in both directions, with no account. On the BCH side you can pick PUSD (ParyonUSD), MUSD (Moria USD) or plain BCH. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and the BCH stablecoin.
 
 ```mermaid
 flowchart LR
-  A["USDC or USDT on Base, Ethereum, Solana, Tron, BNB Chain..."] -- NEAR Intents --> B["BCH on this run's key"]
-  B -- "Cauldron pools" --> C["PUSD on your BCH address"]
-  D["PUSD from any CashTokens wallet"] -- "Cauldron pools" --> E["BCH to the NEAR deposit address"]
-  E -- NEAR Intents --> F["USDC or USDT on the chain you pick"]
+  A["USDC, USDT or DAI on Base, Ethereum, Solana, BNB Chain..."] -- NEAR Intents --> B["BCH"]
+  B -- "Cauldron pools" --> C["PUSD or MUSD on your BCH address"]
+  D["PUSD or MUSD from any CashTokens wallet"] -- "Cauldron pools" --> E["BCH to the NEAR deposit address"]
+  E -- NEAR Intents --> F["USDC, USDT or DAI on the chain you pick"]
 ```
 
-- Into PUSD: pick a stablecoin and chain, then send it to the NEAR deposit address. NEAR delivers BCH to a key this browser made for the run. The page swaps that BCH for PUSD on Cauldron and pays the PUSD, plus any leftover BCH, to your address in one transaction.
-- Out of PUSD: send PUSD to the run's address. The page sells it on Cauldron and pays the NEAR deposit address in the same transaction, and NEAR sends USDC or USDT to your address on the other chain. Refunds and change go to your BCH address.
+- Into BCH: pick a stablecoin and chain and send it to the NEAR deposit address. For PUSD or MUSD, NEAR delivers BCH to a key this browser made for the run, and the page swaps it on Cauldron and pays the token, plus leftover BCH, to your token address in one transaction. For BCH, NEAR pays your address directly.
+- Out of BCH: for PUSD or MUSD, send the token to the run's address. The page sells it on Cauldron and pays the NEAR deposit address in the same transaction, and NEAR sends the stablecoin to your address on the other chain. For BCH, you send it straight to the NEAR deposit address. Refunds and change go to your BCH address.
 
-Before you send anything, the page shows a price from a live NEAR quote and the live Cauldron pools. In a test on 22 Nov 2026, 2 USDC on Base quoted at about 1.97 PUSD, and 2 PUSD quoted at about 1.987 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`.
-
-
-### Paying from another chain
-
-```mermaid
-sequenceDiagram
-  participant Payer as Payer wallet (BNB Chain)
-  participant Page as Pay page
-  participant API as Unlinked API
-  participant NEAR as NEAR Intents 1Click
-  participant BCH as BCH mainnet
-  Page->>Page: derive a one-time BCH address for @zkriro
-  Page->>API: quote 0.5 USDT to BCH, recipient = one-time address
-  API->>NEAR: quote
-  NEAR-->>API: deposit address and time estimate
-  API-->>Page: deposit address and time estimate
-  Payer->>NEAR: send 0.5 USDT to the deposit address
-  Page->>API: submit the tx hash, poll the status
-  NEAR->>BCH: pay 255,511 sat to the one-time address
-  Page-->>Payer: paid, with the BCH transaction
-```
-
-The amounts above are from the real payment in the [mainnet table](#live-on-bch-mainnet).
+The page shows the price from a live NEAR quote and the live Cauldron pools before you send anything. In a test on 22 Nov 2026, 5 USDC on Base quoted at about 4.93 PUSD, 4.91 MUSD or 0.02504 BCH, and 5 PUSD quoted at about 4.979 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`.
 
 ## Screens
 
@@ -192,7 +169,7 @@ The WizardConnect transaction has one output to the one-time address, an `UNLK` 
 - Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before the pool holds meaningful funds.
 - The pool is new, so few notes sit in it today. The privacy a withdraw gets grows with the number of deposits.
 - Deposit and withdraw amounts are public. Transfers inside the pool are not.
-- The PUSD bridge asks you to send PUSD from any CashTokens wallet. Signing that step over WizardConnect is not built yet.
+- The bridge asks you to send PUSD or MUSD from any CashTokens wallet. Signing that step over WizardConnect is not built yet.
 
 ## SolidCash
 
