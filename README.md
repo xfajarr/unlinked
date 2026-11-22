@@ -1,45 +1,202 @@
-# Unlinked
+<div align="center">
 
-Private payment links on Bitcoin Cash. Share one link (`/@you`). Every payment lands on a fresh stealth address that only you can find, and is then shielded by default in our own zero-knowledge pool, verified on-chain in BCH Script.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/logo-white.png">
+  <img src="docs/readme/logo.png" alt="unlinked" width="360">
+</picture>
+
+### Private payment links on Bitcoin Cash
+
+Share one link. Get paid in BCH or any token. Every payment lands on a fresh address only you can find, then moves into a zero-knowledge pool that BCH Script verifies on mainnet.
+
+[![Live app](https://img.shields.io/badge/live-getunlinked.pages.dev-2563ff)](https://getunlinked.pages.dev)
+[![Demo video](https://img.shields.io/badge/demo-video-0b0d14)](https://getunlinked.pages.dev/demo.mp4)
+[![BCH mainnet](https://img.shields.io/badge/BCH-mainnet-0ac18e)](#live-on-bch-mainnet)
+[![SolidCash](https://img.shields.io/badge/contract-SolidCash-6f42c1)](shield/contracts/ShieldPool.scash)
+[![Groth16](https://img.shields.io/badge/ZK-Groth16-1b48c9)](shield/circuits/transact.circom)
+
+[Live app](https://getunlinked.pages.dev) &nbsp;&nbsp; [Demo video](https://getunlinked.pages.dev/demo.mp4) &nbsp;&nbsp; [Pitch deck](https://getunlinked.pages.dev/deck.pdf)
+
+<br>
+
+<a href="https://getunlinked.pages.dev/demo.mp4">
+  <img src="docs/readme/demo-pay.gif" alt="A payer opens @xfajarr's link, pays with Cashonize over WizardConnect, and the payment lands on a one-time address on BCH mainnet" width="880">
+</a>
+
+<sub>A real WizardConnect payment on mainnet. Click for the full narrated demo (1 min 34 s), every transaction in it is real.</sub>
+
+</div>
+
+<br>
+
+Built for BCH BLAZE 2026.
 
 - The payer can't see where your money goes next.
 - You can't see the payer's wallet when they pay from a shielded balance.
 - Our server never learns who got paid. It stores public keys and handle-less announcements, nothing else.
 
-Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Demo video (real mainnet transactions): https://getunlinked.pages.dev/demo.mp4. Pitch deck: https://getunlinked.pages.dev/deck.pdf.
+## The problem
+
+To get paid in BCH today, you post an address. Anyone who has it can look up every payment you received, add up your income, and watch where you send the money next. Every client who pays you sees all of that too. For a freelancer, a creator taking tips or a small shop, sharing one payment address means publishing their books.
+
+Unlinked gives you one link, like `getunlinked.pages.dev/@xfajarr`. People pay through it with a BCH wallet, a QR code, or a token from another chain. Each payment lands on a new address that only you can find, and the app then moves it into Unlinked Shield, a zero-knowledge pool we wrote for this hackathon. On chain, your payments don't point to you or to each other.
+
+<p align="center">
+  <img src="docs/readme/landing.jpg" alt="The landing page section: still pasting wallet addresses? Every payment link lands at a fresh address" width="760">
+</p>
 
 ## How it works
 
-**Stealth payments** (`src/lib/stealth.ts`)
-- Each profile publishes a scan key and a spend key.
-- The payer picks an ephemeral key, derives a one-time address with ECDH on secp256k1 (the ERC-5564 shape), and posts only `(ephemeral pubkey, view tag)` to a public board.
-- The receiver scans the board with their scan key and spends with their spend key.
-- Payers pay with any wallet through **WizardConnect**, a QR code, or **cross-chain via NEAR Intents** (USDC, ETH, SOL and more, settling to the stealth BCH address).
+```mermaid
+flowchart LR
+  P["Payer opens<br/>getunlinked.pages.dev/@ava"] --> A["One-time address<br/>ECDH from @ava's public keys"]
+  A -->|"ephemeral key + view tag"| N["UNLK OP_RETURN<br/>and announcement board"]
+  N --> R["@ava's app scans<br/>with the scan key"]
+  R --> S["Auto-shield<br/>Groth16 proof in the browser"]
+  S --> Pool[("Unlinked Shield pool<br/>BCH Script checks the proof")]
+  Pool --> B["Private balance"]
+  B --> T["Pay @bob privately"]
+  B --> W["Withdraw to any address"]
+```
 
-**Unlinked Shield** (`shield/`, spec in `docs/2026-11-21-unlinked-shield-design.md`)
-- **Proof system:** a Groth16 (BN254) 2-in-2-out join-split.
-  - Poseidon note commitments.
-  - A depth-20 commitment tree.
-  - A depth-40 sparse Merkle tree of nullifiers.
-  - The pool state `S = Poseidon(Rc, n, Rn)` lives in the commitment of the pool's mutable NFT.
-- **Circuit:** `shield/circuits/transact.circom`, 183,095 constraints. Public inputs are `[S_old, H]`, where `H` binds the new state, the commitments, the nullifiers, the public amount and the recipient data byte for byte.
-- **Pool covenant:** `shield/contracts/ShieldPool.scash`, written in SolidCash. It checks the verifier statement, recreates the pool with the new state and enforces payout and fee.
-- **Proof verifier in BCH Script:** three verifier inputs per transaction, built from mr-zwets' `groth16_cashscript` (`chunked/bn254/bn-native-sound`). We added a 34-byte patch that binds the verifier coins to one pool (`shield/contracts/verifier/PATCH.md`).
-- **Cost:** a pool transaction is about 31 kB, so the fee is about 32,000 sat.
-- **Client:** proofs are made in the browser (`src/lib/shield/`, Web Worker), in 8 to 23 s. Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance.
+1. You claim a handle. The app creates your keys in the browser, locks them with a PIN and gives you a 12-word backup. Our server keeps your handle and public keys. It never sees your private keys and never learns who paid you.
+2. A payer opens your link. Their browser derives a one-time address from your public keys with ECDH on secp256k1 (the same idea as ERC-5564 stealth addresses) and pays it. The only extra data it publishes is an ephemeral public key and a one-byte view tag, in an `UNLK` OP_RETURN and on our announcement board. Neither one contains your handle.
+3. Your app scans those announcements with your scan key, picks out the payments meant for you, and can spend them with your spend key.
+4. By default the app then shields each payment. It builds a Groth16 proof in a Web Worker and deposits into the pool, and BCH Script checks the proof on mainnet. From the private balance you can pay another `@handle` or withdraw to any BCH address. A private transfer hides sender, receiver and amount, and a withdraw doesn't show which deposit the coins came from.
 
-**Live on BCH mainnet:** BCHN mainnet nodes accepted the pool and its first three Groth16-verified transactions. Each verifier input uses 82% to 88% of its standard op-cost budget.
-- **Pool:** `bitcoincash:pwtm4nmlq66z9sxftgrjnanhku97ctyfxhrnccf0eqqalymceqhk624p0ztws`
-- **Genesis:** [`560fb1eb…526453c`](https://blockchair.com/bitcoin-cash/transaction/560fb1eb7318f0695ee2a7aa96d2d1ee973c7b0292743c07a973e0e88526453c)
-- **Deposit** of 200,000 sat: [`4f66907e…9d50214`](https://blockchair.com/bitcoin-cash/transaction/4f66907e464bde42ba8a266cb0b4b82e3b76f20ab3d435fadad5a5e309d50214), 31,378 B.
-- **Private transfer:** [`20cbbbf2…faccc51`](https://blockchair.com/bitcoin-cash/transaction/20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51), 31,203 B.
-- **Withdraw** of 100,000 sat: [`57fb44fd…97be5a2`](https://blockchair.com/bitcoin-cash/transaction/57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2), 31,262 B.
+## Ways to pay
 
-**WizardConnect payment on mainnet:** a Cashonize wallet paid `@xfajarr` 0.001 BCH through WizardConnect: [`06b28d53…3b8ba1`](https://blockchair.com/bitcoin-cash/transaction/06b28d53caebd13bb26a1ee6ef6c6d9fcb5ca40598385387c94410b0003b8ba1). It has one output to the one-time address, an `UNLK` OP_RETURN announcement with the ephemeral key, and the wallet's change.
+- Any BCH wallet through WizardConnect. We tested it on mainnet with Cashonize.
+- A QR code for any BCH wallet.
+- USDC, USDT, ETH, SOL and other tokens through NEAR Intents. The swap pays BCH straight to the one-time address, so a cross-chain payment gets the same treatment as a BCH one.
 
-**Trusted setup (disclosure):**
+In the app you get one balance in USD, split into private (in the pool) and arriving (landed, not shielded yet). Auto-shield is on by default, with a switch in Settings. The wallet has a PIN lock with an auto-lock timer you pick. The pay page saves its step, so a payer who refreshes during a cross-chain deposit comes back to the same screen.
+
+## PUSD bridge
+
+[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves dollars between stablecoins on other chains and PUSD (ParyonUSD) on Bitcoin Cash, in both directions, with no account. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and PUSD.
+
+```mermaid
+flowchart LR
+  A["USDC or USDT on Base, Ethereum, Solana, Tron, BNB Chain..."] -- NEAR Intents --> B["BCH on this run's key"]
+  B -- "Cauldron pools" --> C["PUSD on your BCH address"]
+  D["PUSD from any CashTokens wallet"] -- "Cauldron pools" --> E["BCH to the NEAR deposit address"]
+  E -- NEAR Intents --> F["USDC or USDT on the chain you pick"]
+```
+
+- Into PUSD: pick a stablecoin and chain, then send it to the NEAR deposit address. NEAR delivers BCH to a key this browser made for the run. The page swaps that BCH for PUSD on Cauldron and pays the PUSD, plus any leftover BCH, to your address in one transaction.
+- Out of PUSD: send PUSD to the run's address. The page sells it on Cauldron and pays the NEAR deposit address in the same transaction, and NEAR sends USDC or USDT to your address on the other chain. Refunds and change go to your BCH address.
+
+Before you send anything, the page shows a price from a live NEAR quote and the live Cauldron pools. In a test on 22 Nov 2026, 2 USDC on Base quoted at about 1.97 PUSD, and 2 PUSD quoted at about 1.987 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`.
+
+
+### Paying from another chain
+
+```mermaid
+sequenceDiagram
+  participant Payer as Payer wallet (BNB Chain)
+  participant Page as Pay page
+  participant API as Unlinked API
+  participant NEAR as NEAR Intents 1Click
+  participant BCH as BCH mainnet
+  Page->>Page: derive a one-time BCH address for @zkriro
+  Page->>API: quote 0.5 USDT to BCH, recipient = one-time address
+  API->>NEAR: quote
+  NEAR-->>API: deposit address and time estimate
+  API-->>Page: deposit address and time estimate
+  Payer->>NEAR: send 0.5 USDT to the deposit address
+  Page->>API: submit the tx hash, poll the status
+  NEAR->>BCH: pay 255,511 sat to the one-time address
+  Page-->>Payer: paid, with the BCH transaction
+```
+
+The amounts above are from the real payment in the [mainnet table](#live-on-bch-mainnet).
+
+## Screens
+
+All screens come from the demo video and show real mainnet data.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/pay.jpg" alt="The pay page for @xfajarr with the Pay with wallet button"></td>
+    <td width="50%"><img src="docs/readme/cashonize.jpg" alt="Cashonize showing a live WizardConnect session with Unlinked"></td>
+  </tr>
+  <tr>
+    <td>The payer opens the link and taps Pay with wallet.</td>
+    <td>Cashonize holds a live WizardConnect session. The wallet signs, the page never sees the payer's keys.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/readme/paid.jpg" alt="The paid screen next to the mainnet transaction with a one-time output and an UNLK OP_RETURN"></td>
+    <td><img src="docs/readme/balance.jpg" alt="The balance card with private and arriving amounts explained"></td>
+  </tr>
+  <tr>
+    <td>Transaction 06b28d53: 100,000 sat to a one-time address, plus the UNLK announcement.</td>
+    <td>The receiver's real balance. Private means it sits in the shielded pool.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/readme/autoshield.jpg" alt="The auto-shield transaction card: 31,344 bytes, fee 31,971 sat, block 978,437"></td>
+    <td><img src="docs/readme/crosschain.jpg" alt="Timeline of 0.5 USDT on BNB Chain becoming BCH for @zkriro through NEAR Intents"></td>
+  </tr>
+  <tr>
+    <td>The app shielded the payment on its own. BCH Script verified the proof on mainnet.</td>
+    <td>0.5 USDT on BNB Chain arrived as BCH on a one-time address of @zkriro.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/readme/under-the-hood.jpg" alt="Node diagram: payer, one-time address, your app, Unlinked Shield, private balance, pay privately or withdraw"></td>
+    <td><img src="docs/readme/ledger.jpg" alt="The Unlinked Shield pool ledger with five mainnet transactions"></td>
+  </tr>
+  <tr>
+    <td>Stealth addresses first, then the zero-knowledge pool.</td>
+    <td>The pool's five mainnet transactions so far.</td>
+  </tr>
+</table>
+
+## Unlinked Shield
+
+Spec: `docs/2026-11-21-unlinked-shield-design.md`. Code: `shield/`.
+
+The proof system is a Groth16 (BN254) 2-in-2-out join-split. Notes are Poseidon commitments in a depth-20 commitment tree, spent notes go into a depth-40 sparse Merkle tree of nullifiers, and the pool state `S = Poseidon(Rc, n, Rn)` lives in the commitment of the pool's mutable NFT.
+
+| Part | Where | Details |
+|---|---|---|
+| Circuit | `shield/circuits/transact.circom` | 183,095 constraints. Public inputs are `[S_old, H]`, where `H` binds the new state, the commitments, the nullifiers, the public amount and the recipient data byte for byte. |
+| Pool covenant | `shield/contracts/ShieldPool.scash` | Written in SolidCash. It checks the verifier statement, recreates the pool with the new state and enforces payout and fee. |
+| Proof verifier | `shield/contracts/verifier/` | Groth16 verification in BCH Script, three verifier inputs per transaction, built from mr-zwets' `groth16_cashscript` (`chunked/bn254/bn-native-sound`). We added a 34-byte patch that binds the verifier coins to one pool (`shield/contracts/verifier/PATCH.md`). |
+| Client | `src/lib/shield/` | Proofs are made in the browser in a Web Worker, in 8 to 23 s. Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance. |
+| Tests | `shield/contracts/test/solidhat/` | A SolidHat suite of 20 tests (`npm run test:solidhat`): genesis, deposit, transfer and withdraw with real proofs on SolidHat's mock network, plus 11 transactions rejected at the exact `require`. |
+
+A pool transaction is about 31 kB, so the fee is about 32,000 sat. Each verifier input uses 82% to 88% of its standard op-cost budget.
+
+## Live on BCH mainnet
+
+BCHN mainnet nodes accepted the pool and its Groth16-verified transactions.
+
+Pool: `bitcoincash:pwtm4nmlq66z9sxftgrjnanhku97ctyfxhrnccf0eqqalymceqhk624p0ztws`
+
+| What happened | Transaction |
+|---|---|
+| Shield pool genesis | [`560fb1eb…526453c`](https://blockchair.com/bitcoin-cash/transaction/560fb1eb7318f0695ee2a7aa96d2d1ee973c7b0292743c07a973e0e88526453c) |
+| Deposit of 200,000 sat, 31,378 B | [`4f66907e…9d50214`](https://blockchair.com/bitcoin-cash/transaction/4f66907e464bde42ba8a266cb0b4b82e3b76f20ab3d435fadad5a5e309d50214) |
+| Private transfer, 31,203 B | [`20cbbbf2…faccc51`](https://blockchair.com/bitcoin-cash/transaction/20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51) |
+| Withdraw of 100,000 sat, 31,262 B | [`57fb44fd…97be5a2`](https://blockchair.com/bitcoin-cash/transaction/57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2) |
+| Auto-shield from the app: 254,593 sat from a one-time address became a 222,622 sat private note | [`7b94dcb8…910c5a7`](https://blockchair.com/bitcoin-cash/transaction/7b94dcb882e5f0f542ed82488347f9df8e39c01e2b70257b3d1f3e399910c5a7) |
+| WizardConnect: a Cashonize wallet paid `@xfajarr` 0.001 BCH | [`06b28d53…3b8ba1`](https://blockchair.com/bitcoin-cash/transaction/06b28d53caebd13bb26a1ee6ef6c6d9fcb5ca40598385387c94410b0003b8ba1) |
+| Cross-chain, step 1: 0.5 USDT sent on BNB Chain | [`0xb7323a7c…691650`](https://bscscan.com/tx/0xb7323a7c215d4992fe1ad8d9cfe45c468c376935269130287c5a9e7d3a691650) |
+| Cross-chain, step 2: NEAR Intents paid 255,511 sat to a one-time address of `@zkriro` | [`f3fa0bfa…08b539`](https://blockchair.com/bitcoin-cash/transaction/f3fa0bfa16623a8f4a8c9c23e7909481bb796b14ad2ec8b16de4a1ca7608b539) |
+
+The WizardConnect transaction has one output to the one-time address, an `UNLK` OP_RETURN announcement with the ephemeral key, and the wallet's change.
+
+## Trusted setup and known limits
+
 - Phase 1 is the PSE perpetual powers of tau (`ppot_0080_18`).
-- Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before it holds meaningful funds.
+- Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before the pool holds meaningful funds.
+- The pool is new, so few notes sit in it today. The privacy a withdraw gets grows with the number of deposits.
+- Deposit and withdraw amounts are public. Transfers inside the pool are not.
+- The PUSD bridge asks you to send PUSD from any CashTokens wallet. Signing that step over WizardConnect is not built yet.
+
+## SolidCash
+
+The pool covenant is written in SolidCash and tested with SolidHat. While building it we opened [solidcash#19](https://github.com/solidcash/solidcash/pull/19) (a README fix for provider imports) and [solidcash#20](https://github.com/solidcash/solidcash/issues/20) (OP_DEFINE op-cost is under-counted in the pinned libauth).
 
 ## Repo layout
 
@@ -52,6 +209,7 @@ Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Demo video (r
 | `shield/contracts/test/solidhat/` | The SolidHat suite (`npm run test:solidhat`): the pool's genesis, deposit, transfer and withdraw with real proofs on SolidHat's mock network, plus 11 rejects at the exact `require`. |
 | `shield/lib/`, `shield/tx/` | Witness generation, the trees and payload encoding (shared by the circuit tests and the app), and the browser transaction builder. |
 | `shield/deployments/` | Deployed pool parameters per network. |
+| `video/` | The Remotion source of the demo video. |
 
 ## Run locally
 
