@@ -203,7 +203,7 @@ export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
             if (s) storeSaved(handle, { ...s, deposit: undefined })
             backTo({ k: 'chain' })
           }}
-          onDepositStatus={(status) => screen.k === 'deposit' && setScreen({ k: 'deposit', d: { ...screen.d, status } })}
+          onDepositUpdate={(p) => setScreen((s) => (s.k === 'deposit' ? { k: 'deposit', d: { ...s.d, ...p } } : s))}
           onPaid={(paid) => show({ k: 'paid', paid }, true)}
         />
       )

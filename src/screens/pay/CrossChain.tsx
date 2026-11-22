@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { xchainQuote, type Profile, type XQuote, type XStatus, type XToken } from '../../lib/api'
+import { xchainQuote, type Profile, type XQuote, type XToken } from '../../lib/api'
 import { preparePayment } from '../../lib/payments'
 import type { OneTime } from '../../lib/stealth'
 import { ChainPicker, TokenPicker } from './ChainPicker'
+import { startBlock } from './evmwatch'
 import { amountNum, cleanAmount, fmtCoin, fmtUsd, toBaseUnits } from './format'
 import type { PaidInfo } from './PaidScreen'
 import { Notice, PayShell } from './PayShell'
@@ -21,11 +22,11 @@ type Props = {
   onBack: () => void
   onDeposit: (d: Deposit) => void
   onDepositBack: () => void
-  onDepositStatus: (s: XStatus) => void
+  onDepositUpdate: (p: Partial<Deposit>) => void
   onPaid: (p: PaidInfo) => void
 }
 
-export function CrossChain({ profile, usd, x, deposit, onBack, onDeposit, onDepositBack, onDepositStatus, onPaid }: Props) {
+export function CrossChain({ profile, usd, x, deposit, onBack, onDeposit, onDepositBack, onDepositUpdate, onPaid }: Props) {
   const groups = useMemo(() => (x.tokens ? groupByChain(x.tokens) : null), [x.tokens])
   const price = bchPrice(x.tokens)
   const [chain, setChain] = useState(deposit?.token.blockchain ?? 'base')
@@ -75,6 +76,8 @@ export function CrossChain({ profile, usd, x, deposit, onBack, onDeposit, onDepo
     const alive = begin()
     setBusy(true)
     setError(null)
+    // taken before the quote exists, so no transfer to its deposit address can predate it
+    const from = startBlock(token.blockchain)
     let ot: OneTime
     try {
       ot = await preparePayment(profile)
@@ -86,13 +89,14 @@ export function CrossChain({ profile, usd, x, deposit, onBack, onDeposit, onDepo
     }
     if (!alive()) return
     const q: XQuote | { error: string } = await xchainQuote({ data: { originAsset: token.assetId, amount: base, recipient: ot.address, refundTo: refund.trim() } }).catch(() => ({ error: 'Quote failed. Try again.' }))
+    const fromBlock = 'error' in q ? undefined : await Promise.race([from, new Promise<undefined>((r) => setTimeout(r, 1500))])
     if (!alive()) return
     setBusy(false)
     if ('error' in q) return setError(friendlyQuoteError(q.error, name))
-    onDeposit({ quote: q, ot, token, amount, chain: name, startedAt: Date.now() })
+    onDeposit({ quote: q, ot, token, amount, chain: name, startedAt: Date.now(), fromBlock })
   }
 
-  if (deposit) return <XDeposit handle={profile.handle} d={deposit} onBack={onDepositBack} onPaid={onPaid} onStatus={onDepositStatus} />
+  if (deposit) return <XDeposit handle={profile.handle} d={deposit} onBack={onDepositBack} onPaid={onPaid} onUpdate={onDepositUpdate} />
 
   const live = dry && dry.key === key ? dry : null
   const estimate = live?.out ? fmtCoin(live.out) : token && price && amountNum(amount) ? fmtCoin((amountNum(amount) * token.price) / price, 6) : null

@@ -8,10 +8,14 @@ import type { OneTime } from '../../lib/stealth'
 import { CopyButton } from '../../ui'
 import { fmtCoin } from './format'
 import type { PaidInfo } from './PaidScreen'
+import { txUrl, watchDeposit, type Seen } from './evmwatch'
 import { Notice, PayShell } from './PayShell'
 
-/** `status` is the last one seen, saved so a refresh after the deposit landed doesn't show the address again. */
-export type Deposit = { quote: XQuote; ot: OneTime; token: XToken; amount: string; chain: string; startedAt?: number; status?: XStatus }
+/**
+ * `status` is the last one seen, saved so a refresh after the deposit landed doesn't show the address again.
+ * `fromBlock` is where the origin-chain watch starts; `submitted` is the tx hash already sent to 1Click.
+ */
+export type Deposit = { quote: XQuote; ot: OneTime; token: XToken; amount: string; chain: string; startedAt?: number; status?: XStatus; fromBlock?: number; submitted?: string }
 
 const STEPS = ['Waiting for your deposit', 'Swapping to BCH via NEAR Intents', 'Delivered to a one-time address']
 const POLL_MS = 5000
@@ -29,21 +33,29 @@ const elapsed = (ms: number) => {
   return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min`
 }
 
-type Props = { handle: string; d: Deposit; onBack: () => void; onPaid: (p: PaidInfo) => void; onStatus?: (s: XStatus) => void }
+const short = (h: string) => `${h.slice(0, 6)}…${h.slice(-4)}`
 
-export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
+type Props = { handle: string; d: Deposit; onBack: () => void; onPaid: (p: PaidInfo) => void; onUpdate?: (p: Partial<Deposit>) => void }
+
+export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
   const [status, setStatus] = useState<XStatus>(d.status ?? 'PENDING_DEPOSIT')
   // 1Click says PROCESSING until the BCH has a confirmation; the one-time address sees it in the mempool minutes earlier
   const [landed, setLanded] = useState<Utxo[] | null>(null)
+  // the origin chain shows the deposit seconds after it's sent; 1Click can take many minutes to notice
+  const [seen, setSeen] = useState<Seen | null>(null)
+  const [sub, setSub] = useState<'idle' | 'busy' | 'done' | 'failed'>(d.submitted ? 'done' : 'idle')
   const addr = d.quote.depositAddress
+  const chain = d.token.blockchain
+  const transfers = seen && !seen.native ? seen.transfers : []
+  const first = transfers[0]
   const final = isFinal(status) || !!landed
-  const pending = status === 'PENDING_DEPOSIT' && !landed
-  const received = isReceived(status) || !!landed
+  const pending = status === 'PENDING_DEPOSIT' && !landed && !seen
+  const received = isReceived(status) || !!landed || !!seen
   const delivered = !!landed || status === 'SUCCESS'
   const paid = useRef(onPaid)
   paid.current = onPaid
-  const report = useRef(onStatus)
-  report.current = onStatus
+  const update = useRef(onUpdate)
+  update.current = onUpdate
   const [since] = useState(() => d.startedAt ?? Date.now())
   const [now, setNow] = useState(Date.now)
 
@@ -67,8 +79,22 @@ export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
   }, [addr, final])
 
   useEffect(() => {
-    if (status !== (d.status ?? 'PENDING_DEPOSIT')) report.current?.(status)
+    if (status !== (d.status ?? 'PENDING_DEPOSIT')) update.current?.({ status })
   }, [status])
+
+  useEffect(() => {
+    if (final) return
+    return watchDeposit({ chain, assetId: d.token.assetId, address: addr, fromBlock: d.fromBlock, onStart: (fromBlock) => update.current?.({ fromBlock }) }, setSeen)
+  }, [addr, final])
+
+  useEffect(() => {
+    if (!first || sub !== 'idle') return
+    setSub('busy')
+    xchainSubmit({ data: { txHash: first.hash, depositAddress: addr } }).then(
+      () => (setSub('done'), update.current?.({ submitted: first.hash })),
+      () => setSub('failed'),
+    )
+  }, [first?.hash])
 
   useEffect(() => {
     if (!pending) return
@@ -86,7 +112,9 @@ export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
     return () => clearTimeout(t)
   }, [delivered, landed])
 
-  const step = delivered ? 3 : stepOf(status)
+  const step = delivered ? 3 : Math.max(stepOf(status), seen ? 1 : 0)
+  const link = first && txUrl(chain, first.hash)
+  const extra = transfers.length - 1
   const mins = Math.max(1, Math.ceil(d.quote.timeEstimate / 60))
   const until = new Date(d.quote.deadline)
   return (
@@ -126,6 +154,11 @@ export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
       {status === 'REFUNDED' && <Notice>The swap didn't go through. Your {d.token.symbol} went back to your refund address.</Notice>}
       {status === 'FAILED' && <Notice>The swap failed. Your deposit goes back to your refund address.</Notice>}
       {status === 'INCOMPLETE_DEPOSIT' && <Notice>We got less than {d.amount} {d.token.symbol}, so the swap can't run as quoted. It goes back to your refund address.</Notice>}
+      {extra > 0 && (
+        <Notice>
+          {transfers.length} transfers reached this address. Only the first one counts for this swap. NEAR Intents refunds {extra === 1 ? 'the other one' : `the other ${extra}`} to your refund address.
+        </Notice>
+      )}
 
       {!final || delivered ? (
         <ol className="pay-steps" role="status" aria-label="Progress">
@@ -133,8 +166,11 @@ export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
             <li key={label} className={i < step ? 'done' : i === step ? 'now' : ''}>
               <span className="pay-step-b">{i < step ? <Check size={14} strokeWidth={3} /> : i === step ? <span className="pay-pulse" /> : i + 1}</span>
               <span>
-                {label}
+                {seen && i === 0 ? `Deposit seen on ${d.chain}` : seen && i === 1 && stepOf(status) < 1 && !delivered ? 'NEAR Intents is picking it up' : label}
                 {pending && i === 0 && <span className="pay-step-meta">Checking every {POLL_MS / 1000} s, {elapsed(now - since)} so far</span>}
+                {i === 0 && first && (link ? (
+                  <a className="pay-step-meta mono pay-tx" href={link} target="_blank" rel="noreferrer">{short(first.hash)}</a>
+                ) : <span className="pay-step-meta mono">{short(first.hash)}</span>)}
               </span>
             </li>
           ))}
@@ -142,7 +178,7 @@ export function XDeposit({ handle, d, onBack, onPaid, onStatus }: Props) {
       ) : (
         <button type="button" className="btn btn-secondary block pay-gap-sm" onClick={onBack}>Start over</button>
       )}
-      {pending && <SubmitTx depositAddress={addr} />}
+      {status === 'PENDING_DEPOSIT' && !landed && (!first || sub === 'failed') && <SubmitTx depositAddress={addr} />}
       {pending && !Number.isNaN(until.getTime()) && (
         <p className="help">Send before {sendBy(until)}. Later deposits are refunded.</p>
       )}

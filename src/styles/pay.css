@@ -87,6 +87,8 @@
 .pay-steps li.now .pay-step-b { color: var(--blue-9); }
 .pay-steps li.done .pay-step-b { background: var(--blue-9); color: #fff; }
 .pay-step-meta { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-10); }
+.pay-tx { color: var(--blue-11); text-decoration: none; }
+.pay-tx:hover { text-decoration: underline; }
 .pay-once { margin: 10px auto 0; max-width: 34ch; font-weight: 600; color: var(--ink-11); }
 .pay-submit { gap: 8px; }
 .pay-submit-row { display: flex; gap: 8px; align-items: center; }
