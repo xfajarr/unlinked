@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unlinked Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:ital,wght@0,400;1,400&family=Mona+Sans:wght@500;600&display=block" rel="stylesheet">
+<style>
+:root {
+  --red: #860620;
+  --white: #ffffff;
+  --panel: rgba(0, 0, 0, 0.4118);
+  --link: #0097a7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #000; }
+body { overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+.deck { position: fixed; inset: 0; display: grid; place-items: center; }
+.slide {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  overflow: hidden; background: #000; color: var(--white);
+  transform-origin: center center; display: none;
+}
+.slide.active { display: block; }
+.abs { position: absolute; }
+.bg { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+.roboto { font-family: "Roboto", sans-serif; font-weight: 700; }
+.mont { font-family: "Montserrat", sans-serif; }
+
+.blaze-square { left: 80px; top: 0; width: 117px; height: 143px; background: var(--red); }
+.blaze-logo { left: 83px; top: 14px; width: 110px; height: 110px; }
+.fire-arrow { left: 1523px; top: 785px; width: 368px; height: 368px; }
+
+.s1-title { left: 181px; top: 496px; font-size: 88px; line-height: 1.18; }
+.s1-team { left: 170px; top: 654px; width: 800px; font-size: 53.3px; line-height: 1.18; }
+.s1-links { left: 162px; top: 942px; display: flex; align-items: center; gap: 62px; }
+.s1-link { display: flex; align-items: center; gap: 12px; font-size: 42.7px; line-height: 1; white-space: nowrap; }
+.dot { position: relative; width: 58px; height: 58px; flex: none; }
+.dot::before { content: ""; position: absolute; left: 6px; top: 4px; width: 53px; height: 53px; border-radius: 50%; background: var(--red); }
+.dot img, .dot svg { position: absolute; }
+.dot img { inset: 0; width: 58px; height: 58px; }
+.dot svg { left: 17px; top: 15px; width: 31px; height: 31px; }
+
+.card {
+  left: 1039px; top: 110px; width: 787px; height: 787px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(110% 80% at 50% 0%, #5b8cff 0%, #2f6bff 45%, #1d4fd8 100%);
+  font-family: "Mona Sans", "Montserrat", sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+.card .ribbon { position: absolute; z-index: -1; pointer-events: none; }
+.card .ribbon.one { width: 115%; right: -48%; top: -12%; opacity: 0.85; transform: rotate(-8deg); }
+.card .ribbon.two { width: 95%; left: -52%; top: 56%; opacity: 0.55; transform: rotate(12deg) scaleX(-1); }
+.card .mark { width: 176px; height: 176px; border-radius: 55px; background: #fff; display: grid; place-items: center; box-shadow: 0 24px 48px -16px rgba(8, 20, 70, 0.45); }
+.card .mark svg { width: 112px; height: 112px; }
+.card .word { margin-top: 40px; font-size: 124px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
+.card .tag { margin-top: 30px; font-size: 40px; font-weight: 500; line-height: 1.25; color: rgba(255, 255, 255, 0.9); max-width: 640px; letter-spacing: -0.01em; }
+
+.center-text { left: 261px; width: 1397px; text-align: center; }
+.s2-name { top: 134px; font-size: 114.7px; line-height: 1.17; }
+.s2-name b, .s5-head b { color: var(--red); font-weight: 700; }
+.s2-tag { top: 402px; font-size: 93.3px; line-height: 1.17; }
+.s2-link { top: 729px; font-size: 61.3px; line-height: 1.17; font-weight: 700; color: var(--link); text-decoration: underline; text-underline-offset: 8px; text-decoration-thickness: 4px; }
+.s2-link a { color: inherit; }
+
+.s3-panel { left: 167px; top: 191px; width: 815px; height: 713px; background: var(--panel); padding: 19px 19px; }
+.s3-panel p { font-size: 37px; line-height: 1.3; font-weight: 700; }
+.s3-panel p + p { margin-top: 30px; }
+.title-bar { left: 167px; top: 89px; width: 1215px; height: 84px; background: var(--red); }
+.s3-title { left: 252px; top: 90px; font-size: 66.7px; line-height: 1.18; white-space: nowrap; }
+.frame { left: 1020px; top: 183px; width: 799px; height: 753px; background: var(--panel); border: 6px solid var(--red); }
+.shot { left: 1076px; top: 215px; width: 688px; height: 688px; object-fit: cover; }
+
+.list-panel { left: 746px; top: 65px; width: 1108px; height: 925px; background: var(--panel); }
+.list-title { left: 185px; top: 129px; width: 520px; font-size: 77.3px; line-height: 1.2; }
+.list-title::after { content: ""; display: block; width: 173px; height: 55px; margin-top: 36px; background: var(--red); }
+.bullets { left: 832px; top: 129px; width: 966px; list-style: none; font-family: "Montserrat", sans-serif; font-weight: 700; font-size: 48px; line-height: 1.2; }
+.bullets.dense { left: 812px; width: 1010px; font-size: 42px; }
+.bullets li { position: relative; padding-left: 1.8em; margin-top: 0.46em; }
+.bullets li:first-child { margin-top: 0; }
+.bullets li::before { content: "\25CF"; position: absolute; left: 0.2em; top: 0; font-size: 0.82em; line-height: 1.46; }
+.bullets li.sub { padding-left: 3.6em; margin-top: 0.16em; }
+.bullets li.sub::before { content: "\25CB"; left: 2.4em; }
+
+.s5-head { top: 60px; font-size: 114.7px; line-height: 1.15; }
+.s5-text { top: 214px; left: 160px; width: 1600px; font-size: 45px; line-height: 1.32; }
+.code {
+  left: 249px; top: 500px; width: 1422px; padding: 26px 40px;
+  background: #f8f8f8; border: 1px solid #e6e6e6; border-radius: 8px;
+  font-family: "Roboto Mono", ui-monospace, monospace; font-size: 24px; line-height: 35px; color: #24292f;
+  white-space: pre;
+}
+.code .k { color: #128a8f; }
+.code .o { color: #128a8f; }
+.code .t { color: #3a6fd0; }
+.code .f { color: #9b46c4; font-style: italic; }
+.code .n { color: #a3157f; }
+.code .p { color: #8e44b8; }
+.code .c { color: #9ba3ab; font-style: italic; }
+
+.s7-thanks { left: 329px; top: 362px; font-size: 205.3px; line-height: 1.18; white-space: nowrap; }
+.s7-char { left: 576px; top: 101px; width: 672px; height: 972px; }
+.s7-vignette { left: 0; top: 0; width: 1920px; height: 1080px; background: linear-gradient(to bottom, rgba(0,0,0,0) 62%, rgba(0,0,0,0.55) 100%); }
+.s7-links { left: 0; top: 968px; width: 1920px; display: flex; justify-content: center; gap: 72px; }
+.s7-links .s1-link { font-size: 34px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); }
+.s7-links .dot { transform: scale(0.8); }
+
+.hint { position: fixed; right: 16px; bottom: 12px; font: 13px/1 "Roboto", sans-serif; color: rgba(255,255,255,0.45); }
+
+@page { size: 1920px 1080px; margin: 0; }
+@media print {
+  html, body { width: 1920px; background: #000; overflow: visible; }
+  .deck { position: static; display: block; }
+  .slide { position: relative; left: 0; top: 0; display: block !important; transform: none !important; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .hint { display: none; }
+}
+</style>
+</head>
+<body>
+<main class="deck">
+
+<section class="slide">
+  <img class="bg" src="bg1.jpg" alt="">
+  <div class="abs blaze-square"></div>
+  <img class="abs blaze-logo" src="blaze-logo.png" alt="BCH BLAZE">
+  <h1 class="abs roboto s1-title">Unlinked</h1>
+  <p class="abs roboto s1-team">Team Unlinked: xfajarr &amp; zakariyyaaa</p>
+  <div class="abs s1-links mont">
+    <div class="s1-link"><span class="dot"><img src="icon-link.png" alt=""></span>getunlinked.pages.dev</div>
+    <div class="s1-link"><span class="dot"><svg viewBox="0 0 16 16" fill="#fff"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span>github.com/xfajarr/unlinked</div>
+  </div>
+  <div class="abs card">
+    <img class="ribbon one" src="ribbon.webp" alt="">
+    <img class="ribbon two" src="ribbon.webp" alt="">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2563ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" x2="8" y1="2" y2="5"/><line x1="2" x2="5" y1="8" y2="8"/><line x1="16" x2="16" y1="19" y2="22"/><line x1="19" x2="22" y1="16" y2="16"/></svg>
+    </div>
+    <div class="word">unlinked</div>
+    <div class="tag">Private payment links<br>on Bitcoin Cash</div>
+  </div>
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg2.jpg" alt="">
+  <h1 class="abs mont center-text s2-name" style="font-weight:400">Un<b>linked</b></h1>
+  <p class="abs mont center-text s2-tag">Private payment links on Bitcoin Cash</p>
+  <p class="abs mont center-text s2-link"><a href="https://github.com/xfajarr/unlinked">https://github.com/xfajarr/unlinked</a></p>
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg3.jpg" alt="">
+  <div class="abs s3-panel mont">
+    <p>A public payment address is a window into your wallet. Post one on your profile and anyone can see what you earn, who paid you, and where the money went next.</p>
+    <p>We wanted a link you can share anywhere that shows none of that, with no privacy jargon for the user.</p>
+    <p>So we built it: a fresh stealth address for every payment, then a zero-knowledge pool on Bitcoin Cash, verified on-chain in BCH Script.</p>
+  </div>
+  <div class="abs title-bar"></div>
+  <h2 class="abs roboto s3-title">The Story of Unlinked</h2>
+  <div class="abs frame"></div>
+  <img class="abs fire-arrow" src="fire-arrow.png" alt="">
+  <img class="abs shot" src="story.jpg" alt="Unlinked landing page with the app on a phone">
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg4.jpg" alt="">
+  <div class="abs list-panel"></div>
+  <h2 class="abs roboto list-title">Benefits of Unlinked</h2>
+  <ul class="abs bullets dense">
+    <li>One link, paid from any wallet or chain</li>
+    <li class="sub">WizardConnect, QR code, or USDC, ETH and SOL via NEAR Intents</li>
+    <li>Every payment lands on a fresh stealth address</li>
+    <li>Private by default</li>
+    <li class="sub">Payers can&rsquo;t follow your money after it lands</li>
+    <li>Our server never learns who got paid</li>
+    <li>12 words restore your account on any device</li>
+  </ul>
+  <img class="abs fire-arrow" src="fire-arrow.png" alt="">
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg2.jpg" alt="">
+  <h2 class="abs mont center-text s5-head" style="font-weight:400">BCH <b>Usage</b></h2>
+  <p class="abs mont center-text s5-text">Every payment is a one-time stealth address. Then Unlinked Shield moves it into our own Groth16 zero-knowledge pool, verified on BCH mainnet in pure BCH Script (2026 VM). The pool is a covenant that only accepts a valid proof.</p>
+<pre class="abs code"><span class="k">contract</span> ShieldPool<span class="p">(</span><span class="t">bytes</span> verifierLock, <span class="t">bytes</span> poolToken<span class="p">)</span> <span class="p">{</span>
+    <span class="k">function</span> <span class="f">transact</span><span class="p">(</span><span class="t">bytes32</span> c0, <span class="t">bytes32</span> c1, <span class="t">bytes32</span> nf0, <span class="t">bytes32</span> nf1, <span class="t">bytes</span> extData<span class="p">)</span> <span class="p">{</span>
+        <span class="c">// the proof's public input n0 must be the pool's current state</span>
+        <span class="t">bytes</span> ns <span class="o">=</span> tx<span class="o">.</span>inputs<span class="p">[</span><span class="n">2</span><span class="p">]</span><span class="o">.</span>unlockingBytecode<span class="o">.</span>slice<span class="p">(</span><span class="n">357</span>, <span class="n">421</span><span class="p">)</span>;
+        <span class="k">require</span><span class="p">(</span>ns<span class="o">.</span>split<span class="p">(</span><span class="n">32</span><span class="p">)[</span><span class="n">0</span><span class="p">]</span><span class="o">.</span>reverse<span class="p">()</span> <span class="o">==</span> tx<span class="o">.</span>inputs<span class="p">[</span><span class="n">3</span><span class="p">]</span><span class="o">.</span>nftCommitment<span class="p">)</span>;
+
+        <span class="k">require</span><span class="p">(</span>tx<span class="o">.</span>outputs<span class="p">[</span><span class="n">0</span><span class="p">]</span><span class="o">.</span>lockingBytecode <span class="o">==</span> tx<span class="o">.</span>inputs<span class="p">[</span><span class="n">3</span><span class="p">]</span><span class="o">.</span>lockingBytecode<span class="p">)</span>;
+        <span class="k">require</span><span class="p">(</span>tx<span class="o">.</span>outputs<span class="p">[</span><span class="n">0</span><span class="p">]</span><span class="o">.</span>tokenCategory <span class="o">==</span> poolToken<span class="p">)</span>;
+        <span class="k">require</span><span class="p">(</span>tx<span class="o">.</span>outputs<span class="p">[</span><span class="n">0</span><span class="p">]</span><span class="o">.</span>tokenAmount <span class="o">==</span> <span class="n">0</span><span class="p">)</span>;
+        <span class="t">bytes</span> s1 <span class="o">=</span> tx<span class="o">.</span>outputs<span class="p">[</span><span class="n">0</span><span class="p">]</span><span class="o">.</span>nftCommitment;
+        <span class="k">require</span><span class="p">(</span>s1<span class="o">.</span>length <span class="o">==</span> <span class="n">32</span><span class="p">)</span>;
+        <span class="c">// ...</span>
+    <span class="p">}</span>
+<span class="p">}</span></pre>
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg4.jpg" alt="">
+  <div class="abs list-panel"></div>
+  <h2 class="abs roboto list-title">The Vision for Unlinked</h2>
+  <ul class="abs bullets">
+    <li>The default way to get paid in BCH without doxxing your wallet</li>
+    <li class="sub">Links, invoices and tips for creators, freelancers and shops</li>
+    <li>Next: a multi-party trusted setup ceremony</li>
+    <li>CashTokens and stablecoins inside the pool</li>
+    <li>Batch shielding to cut fees</li>
+  </ul>
+  <img class="abs fire-arrow" src="fire-arrow.png" alt="">
+</section>
+
+<section class="slide">
+  <img class="bg" src="bg7.jpg" alt="">
+  <h2 class="abs roboto s7-thanks">THANK YOU!</h2>
+  <img class="abs s7-char" src="char7.png" alt="">
+  <div class="abs s7-vignette"></div>
+  <div class="abs s7-links mont">
+    <div class="s1-link"><span class="dot"><img src="icon-link.png" alt=""></span>getunlinked.pages.dev</div>
+    <div class="s1-link"><span class="dot"><svg viewBox="0 0 16 16" fill="#fff"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span>github.com/xfajarr/unlinked</div>
+  </div>
+</section>
+
+</main>
+<div class="hint">&larr; &rarr; or click</div>
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+let i = Math.min(Math.max(parseInt(location.hash.slice(1), 10) - 1 || 0, 0), slides.length - 1);
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  slides.forEach(el => el.style.transform = `translate(-50%, -50%) scale(${s})`);
+}
+function show(n) {
+  i = Math.min(Math.max(n, 0), slides.length - 1);
+  slides.forEach((el, k) => el.classList.toggle("active", k === i));
+  history.replaceState(null, "", "#" + (i + 1));
+}
+addEventListener("keydown", e => {
+  if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+  if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+  if (e.key === "Home") show(0);
+  if (e.key === "End") show(slides.length - 1);
+});
+addEventListener("click", e => {
+  if (e.target.closest("a")) return;
+  show(e.clientX < innerWidth / 3 ? i - 1 : i + 1);
+});
+addEventListener("resize", fit);
+fit();
+show(i);
+document.fonts.ready.then(() => document.documentElement.classList.add("fonts-ready"));
+</script>
+</body>
+</html>
