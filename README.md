@@ -35,6 +35,8 @@ Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Pitch deck: h
 - **Private transfer:** [`20cbbbf2…faccc51`](https://blockchair.com/bitcoin-cash/transaction/20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51), 31,203 B.
 - **Withdraw** of 100,000 sat: [`57fb44fd…97be5a2`](https://blockchair.com/bitcoin-cash/transaction/57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2), 31,262 B.
 
+**WizardConnect payment on mainnet:** a Cashonize wallet paid `@xfajarr` 0.001 BCH through WizardConnect: [`06b28d53…3b8ba1`](https://blockchair.com/bitcoin-cash/transaction/06b28d53caebd13bb26a1ee6ef6c6d9fcb5ca40598385387c94410b0003b8ba1). It has one output to the one-time address, an `UNLK` OP_RETURN announcement with the ephemeral key, and the wallet's change.
+
 **Trusted setup (disclosure):**
 - Phase 1 is the PSE perpetual powers of tau (`ppot_0080_18`).
 - Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before it holds meaningful funds.
