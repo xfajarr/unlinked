@@ -4,19 +4,35 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3700",
+    "dev:chipnet": "VITE_NETWORK=chipnet vite --port 3702",
+    "dev:api": "cd api && npm run dev",
     "build": "tsc -b && vite build",
+    "build:chipnet": "tsc -b && VITE_NETWORK=chipnet vite build --outDir dist-chipnet",
+    "shield:assets": "sh scripts/shield-assets.sh",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:chipnet": "npm run build:chipnet && wrangler deploy --env chipnet",
+    "deploy:api": "cd api && npm run deploy"
   },
   "dependencies": {
+    "@bitauth/libauth": "^3.0.0",
+    "@electrum-cash/network": "^4.4.8",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
     "@scure/bip39": "^2.4.0",
     "@web3icons/react": "^4.1.27",
+    "@wizardconnect/dapp": "^0.2.8",
+    "@wizardconnect/react": "^0.2.7",
+    "circomlibjs": "^0.1.7",
     "lottie-react": "^3.1.2",
     "lucide-react": "^1.77.0",
+    "qrcode-generator": "^2.0.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "snarkjs": "^0.7.5"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
@@ -25,6 +41,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "wrangler": "^4.166.0"
   }
 }

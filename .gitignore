@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Shield prover files (scripts/shield-assets.sh writes them; ~106 MB)
+public/shield/
+api/.wrangler
+.wrangler
+shield/circuits/build/*.zkey
+shield/circuits/build/transact_js/
+shield/contracts/.keys/
+**/node_modules
+dist-chipnet
+shield/contracts/build/*.plan*.json
+shield/contracts/build/*.dry*.json
+shield/contracts/standin/build/*.log
