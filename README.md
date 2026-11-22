@@ -1,32 +1,62 @@
-# React + TypeScript + Vite
+# Unlinked
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Private payment links on Bitcoin Cash. Share one link (`/@you`). Every payment lands on a fresh stealth address that only you can find, and is then shielded by default in our own zero-knowledge pool, verified on-chain in BCH Script.
 
-Currently, two official plugins are available:
+- The payer can't see where your money goes next.
+- You can't see the payer's wallet when they pay from a shielded balance.
+- Our server never learns who got paid. It stores public keys and handle-less announcements, nothing else.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Built for BCH BLAZE 2026.
 
-## React Compiler
+## How it works
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Stealth payments** (`src/lib/stealth.ts`)
+- Each profile publishes a scan key and a spend key.
+- The payer picks an ephemeral key, derives a one-time address with ECDH on secp256k1 (the ERC-5564 shape), and posts only `(ephemeral pubkey, view tag)` to a public board.
+- The receiver scans the board with their scan key and spends with their spend key.
+- Payers pay with any wallet through **WizardConnect**, a QR code, or **cross-chain via NEAR Intents** (USDC, ETH, SOL and more, settling to the stealth BCH address).
 
-## Expanding the Oxlint configuration
+**Unlinked Shield** (`shield/`, spec in `docs/2026-11-21-unlinked-shield-design.md`)
+- **Proof system:** a Groth16 (BN254) 2-in-2-out join-split.
+  - Poseidon note commitments.
+  - A depth-20 commitment tree.
+  - A depth-40 sparse Merkle tree of nullifiers.
+  - The pool state `S = Poseidon(Rc, n, Rn)` lives in the commitment of the pool's mutable NFT.
+- **Circuit:** `shield/circuits/transact.circom`, 183,095 constraints. Public inputs are `[S_old, H]`, where `H` binds the new state, the commitments, the nullifiers, the public amount and the recipient data byte for byte.
+- **Pool covenant:** `shield/contracts/ShieldPool.scash`, written in SolidCash. It checks the verifier statement, recreates the pool with the new state and enforces payout and fee.
+- **Proof verifier in BCH Script:** three verifier inputs per transaction, built from mr-zwets' `groth16_cashscript` (`chunked/bn254/bn-native-sound`). We added a 34-byte patch that binds the verifier coins to one pool (`shield/contracts/verifier/PATCH.md`).
+- **Cost:** a pool transaction is about 31 kB, so the fee is about 32,000 sat.
+- **Client:** proofs are made in the browser (`src/lib/shield/`, Web Worker), in 8 to 23 s. Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+**Trusted setup (disclosure):**
+- Phase 1 is the PSE perpetual powers of tau (`ppot_0080_18`).
+- Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before it holds meaningful funds.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Repo layout
+
+| Path | What |
+|---|---|
+| `src/` | The app: a Vite and React SPA. Screens are in `src/screens/`, the wallet, stealth and Shield client in `src/lib/`. |
+| `api/` | The API: a Cloudflare Worker and D1. It holds profiles (public keys), the announcement board and a NEAR Intents proxy. |
+| `shield/circuits/` | The circom circuit and the setup scripts. `build/` holds the verification key and the zkey hash. |
+| `shield/contracts/` | The SolidCash pool, the verifier build and patch, VM test suites, and the deploy and end-to-end scripts. |
+| `shield/lib/`, `shield/tx/` | Witness generation, the trees and payload encoding (shared by the circuit tests and the app), and the browser transaction builder. |
+| `shield/deployments/` | Deployed pool parameters per network. |
+
+## Run locally
+
+```sh
+npm install && (cd api && npm install)
+npm run dev:api        # API on :8790 with a local D1
+npm run shield:assets  # prover files into public/shield (needs shield/circuits/build/transact_final.zkey)
+npm run dev            # app on :3700 (mainnet); dev:chipnet for chipnet on :3702
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Deploy with `npm run deploy:api`, then `npm run deploy`. `.env.production` holds `VITE_API_URL`.
+
+## Credits
+
+- The Groth16 verifier in BCH Script is mr-zwets/groth16_cashscript (verifier.cash), ISC.
+- circom, snarkjs, circomlib and circomlibjs are by iden3, GPL-3.0.
+- The powers of tau are PSE's perpetual powers of tau.
+- The UI design is by zakariyyaaa.
