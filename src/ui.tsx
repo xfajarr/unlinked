@@ -74,10 +74,8 @@ export function CopyButton({ text, label }: { text: string; label?: string }) {
 }
 
 const ModalCtx = createContext<() => void>(() => {})
-/** Close the surrounding Modal with its exit animation (use for Cancel / Back buttons inside a dialog). */
 export const useModalClose = () => useContext(ModalCtx)
 
-/** A button that closes the surrounding Modal with its exit animation. */
 export function ModalCancel({ children, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const close = useModalClose()
   return <button type="button" {...rest} onClick={close}>{children}</button>
@@ -87,7 +85,6 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   const [leaving, setLeaving] = useState(false)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
-  // play the exit animation, then tell the parent to unmount
   const leavingRef = useRef(false)
   const close = useCallback(() => {
     if (leavingRef.current) return
@@ -192,7 +189,6 @@ export function RollingNumber({ value }: { value: string }) {
   )
 }
 
-/** Small segmented control whose white pill slides to the chosen option. */
 export function Segmented<T extends string>({ options, value, onChange, label }: { options: T[]; value: T; onChange: (v: T) => void; label: string }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const box = useRef<HTMLDivElement>(null)
@@ -220,7 +216,6 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
   )
 }
 
-/** Success: our own Lottie (tile pops, tick draws, ring + burst). Static tick when motion is reduced. */
 export function SuccessMark({ size = 128 }: { size?: number }) {
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (reduced) {

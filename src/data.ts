@@ -61,7 +61,6 @@ for (let i = 0; i < 29; i++) {
   })
 }
 
-// sends made in this browser session, newest first (demo only)
 export const SENT: Payment[] = []
 export function recordSent(to: string, amount: number, txs: number, withdraw: boolean) {
   SENT.unshift({

@@ -1,0 +1,60 @@
+
+.ap-gate { align-items: center; gap: 16px; padding-top: 24px; }
+.ap-gate .field { text-align: center; }
+.ap-err, .ap-hint { margin: 0; font-size: 14px; line-height: 20px; min-height: 20px; text-align: center; }
+.ap-err { color: var(--red-11); }
+.ap-hint { color: var(--ink-10); }
+.ap-err-text { color: var(--red-11); }
+.stack.center > .ap-err, .stack.center > .ap-hint { width: 100%; }
+.field-wrap + .ap-err, .field-wrap + .ap-hint { margin-top: 10px; }
+.badge.ap-bad { background: #fdecea; color: var(--red-11); }
+
+.ap-words-input { height: auto; min-height: 112px; padding: 18px 24px; resize: none; line-height: 26px; font-size: 17px; display: block; font-family: var(--font); }
+
+.row-main > .badge { height: 24px; margin-top: 6px; font-size: 12px; padding: 0 10px; }
+.badge.ap-tone-live { background: var(--blue-3); color: var(--blue-11); }
+.badge.ap-tone-ok { background: var(--green-3); color: var(--green-11); }
+.badge.ap-tone-warn { background: #fff4e0; color: #8a5300; }
+.badge.ap-tone-quiet { background: var(--well); color: var(--ink-10); }
+.ap-pulse { animation: ap-pulse 1.4s ease-in-out infinite; }
+@keyframes ap-pulse { 50% { opacity: 0.3; } }
+
+.ap-usd { flex: none; border-radius: 99px; display: grid; place-items: center; background: #e7f5ee; color: #137a4b; font-family: var(--num); font-weight: 700; font-size: 18px; }
+
+.ap-ico { width: 36px; height: 36px; border-radius: 99px; display: grid; place-items: center; background: var(--blue-3); color: var(--blue-9); flex: none; }
+.ap-ico.lg { width: 64px; height: 64px; margin: 0 auto 6px; }
+.ap-small { margin: 0; font-size: 14px; line-height: 20px; }
+
+.ap-bar { width: 100%; height: 6px; border-radius: 99px; background: var(--well); overflow: hidden; }
+.ap-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--blue-9); transition: width 300ms var(--ease); }
+.ap-shielding { display: flex; flex-direction: column; gap: 12px; }
+.ap-shielding-t { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.ap-proof { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 4px; }
+.ap-proof-t { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+
+.ap-notice { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; margin: 0 0 14px; border-radius: 22px; background: #fff4e0; color: #6b4300; font-size: 15px; line-height: 21px; transition: filter 150ms var(--ease); }
+.ap-notice:hover { filter: brightness(0.98); }
+.ap-notice .ap-ico { background: #fff; color: #8a5300; }
+.send-section .ap-notice { margin: 0; }
+
+.ap-inline-err { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink-11); font-size: 15px; }
+.frame > .ap-inline-err.panel { padding: 14px 22px; }
+.ap-empty { padding: 20px 0 8px; }
+
+.ap-skel { border-radius: 14px; background: linear-gradient(90deg, var(--well) 0%, var(--well-strong) 50%, var(--well) 100%); background-size: 200% 100%; animation: ap-shimmer 1.4s linear infinite; }
+.ap-skel-hero { width: 220px; height: 56px; margin: 6px 0; }
+.ap-skel-row { height: 64px; margin: 8px 0; }
+@keyframes ap-shimmer { to { background-position: -200% 0; } }
+
+.ap-pick { cursor: pointer; }
+.ap-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.ap-check { width: 26px; height: 26px; border-radius: 8px; flex: none; display: grid; place-items: center; background: var(--well-strong); color: #fff; transition: background 150ms var(--ease); }
+.ap-check.on { background: var(--blue-9); }
+.ap-pick input:focus-visible + .ap-check { box-shadow: 0 0 0 3px var(--blue-6); }
+
+.ap-tx { color: inherit; text-decoration: none; gap: 10px; }
+.ap-tx:hover .row-main { color: var(--blue-9); }
+
+.toasts { position: fixed; z-index: 80; left: 50%; bottom: max(96px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { pointer-events: auto; padding: 12px 18px; border-radius: 18px; background: var(--ink-12); color: #fff; font-size: 15px; box-shadow: var(--shadow-modal); animation: rise 200ms var(--ease); max-width: calc(100vw - 32px); text-align: center; }
+.toast.error { background: var(--red-11); }

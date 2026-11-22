@@ -1,6 +1,7 @@
 import type React from 'react'
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowUpRight, History, House, Link2, Wallet } from 'lucide-react'
+import './styles/app.css'
 import { Logo } from './ui'
 import Onboarding from './screens/Onboarding'
 import Landing from './screens/Landing'
@@ -10,26 +11,23 @@ import LinkPage from './screens/LinkPage'
 import Send from './screens/Send'
 import Settings from './screens/Settings'
 import Pay from './screens/Pay'
+import DemoDashboard from './screens/demo/Dashboard'
+import DemoSend from './screens/demo/Send'
+import DemoTransactions from './screens/demo/Transactions'
+import { ToastProvider } from './components/Toast'
+import { useVault } from './lib/vault'
+import { NETWORK } from './lib/config'
+import { AccountProvider } from './app/account'
+import Unlock from './app/Unlock'
 
-type User = { handle: string; mnemonic: string }
-type Store = { user: User | null; setUser: (u: User | null) => void }
-const Ctx = createContext<Store>({ user: null, setUser: () => {} })
+type User = { handle: string }
+const Ctx = createContext<{ user: User | null }>({ user: null })
 export const useStore = () => useContext(Ctx)
 
-const KEY = 'unlinked:user'
-// ?embed=1 renders the app as a showcase (landing page phone): fixed demo user, nothing saved
+// ?embed=1 renders the app as a showcase (landing page phone): fixed demo user and demo data, nothing saved
 export const EMBED = new URLSearchParams(window.location.search).has('embed')
-const EMBED_USER: User = { handle: 'rina', mnemonic: 'demo demo demo demo demo demo demo demo demo demo demo demo' }
+const EMBED_USER: User = { handle: 'rina' }
 if (EMBED) document.documentElement.classList.add('embed')
-function load(): User | null {
-  if (EMBED) return EMBED_USER
-  try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
 
 function useHash() {
   const [hash, setHash] = useState(() => window.location.hash.slice(1) || '/')
@@ -53,7 +51,6 @@ const NAV = [
   { path: '/settings', label: 'Wallet', short: 'Wallet', icon: Wallet },
 ]
 
-// solid versions of the nav icons, shown on the active bottom-nav item
 const SOLID: Record<string, React.ReactNode> = {
   '/dashboard': (
     <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden>
@@ -110,30 +107,39 @@ function Tabs({ active }: { active: string }) {
 }
 
 export default function App() {
-  const [user, setUserState] = useState<User | null>(load)
   const hash = useHash()
-  const setUser = (u: User | null) => {
-    setUserState(u)
-    if (EMBED) return
-    try {
-      if (u) localStorage.setItem(KEY, JSON.stringify(u))
-      else localStorage.removeItem(KEY)
-    } catch { /* storage unavailable: keep in memory */ }
-  }
+  const { stored, keys } = useVault()
+  const user = EMBED ? EMBED_USER : stored ? { handle: stored.handle } : null
 
   const path = hash.startsWith('/pay/') ? hash : hash.split('?')[0]
   const current = path === '/' || path === '/inbox' ? '/dashboard' : path === '/payments' ? '/transactions' : path
+  const paying = hash.startsWith('/pay/')
+  // no account: app routes go through /onboarding, so a claim that writes the vault mid-flow stays on it
+  const toOnboarding = !EMBED && !paying && !stored && !['/', '', '/landing', '/onboarding'].includes(path)
+  useEffect(() => {
+    if (toOnboarding) go('/onboarding')
+  }, [toOnboarding])
+
   let page: React.ReactNode
   let chrome = true
-  if (hash.startsWith('/pay/')) {
+  if (paying) {
     page = <Pay raw={hash.slice(5)} />
     chrome = false
   } else if (path === '/landing' || (!user && (path === '/' || path === ''))) {
     page = <Landing />
     chrome = false
-  } else if (!user || path === '/onboarding') {
+  } else if (!EMBED && (!stored || path === '/onboarding')) {
     page = <Onboarding />
     chrome = false
+  } else if (!EMBED && !keys) {
+    page = <Unlock handle={stored!.handle} />
+    chrome = false
+  } else if (EMBED) {
+    page =
+      path === '/send' ? <DemoSend key={'send' + hash} /> :
+      path === '/withdraw' ? <DemoSend key={'withdraw' + hash} mode="withdraw" /> :
+      path === '/transactions' || path === '/payments' ? <DemoTransactions key={hash} /> :
+      <DemoDashboard />
   } else {
     page =
       path === '/link' ? <LinkPage /> :
@@ -145,35 +151,39 @@ export default function App() {
   }
 
   return (
-    <Ctx.Provider value={{ user, setUser }}>
-      <div className="shell">
-        {chrome && user && (
-          <header className="topbar nav-bar">
-            <div className="topbar-left"><Logo /></div>
-            <Tabs active={current} />
-            <div className="topbar-right">
-              <button className="btn btn-primary md cta-create" onClick={() => go('/link')} aria-label="Create link">
-                <Link2 size={18} strokeWidth={2.4} /><span className="hide-narrow">Create link</span>
-              </button>
-            </div>
-          </header>
-        )}
-        {chrome && user && (
-          <nav className={`bottom-nav${NAV.some((n) => n.path === current) ? '' : ' no-pill'}`} aria-label="Main" style={{ ['--i' as string]: Math.max(0, NAV.findIndex((n) => n.path === current)) }}>
-            <span className="bottom-pill" aria-hidden />
-            {NAV.map(({ path, label, icon: I }) => {
-              const on = current === path
-              return (
-                <button key={path} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined} aria-label={label} title={label} onClick={() => go(path)}>
-                  {on && SOLID[path] ? SOLID[path] : <I size={24} strokeWidth={on ? 2.6 : 2} />}
-                </button>
-              )
-            })}
-          </nav>
-        )}
-        {page}
-        {!EMBED && <span className="badge neutral demo-chip"><span className="dot" style={{ color: '#f5a524' }} />Demo<span className="hide-sm"> · no real funds</span></span>}
-      </div>
-    </Ctx.Provider>
+    <ToastProvider>
+      <Ctx.Provider value={{ user }}>
+        <AccountProvider stored={EMBED ? null : stored} keys={EMBED ? null : keys}>
+          <div className="shell">
+            {chrome && user && (
+              <header className="topbar nav-bar">
+                <div className="topbar-left"><Logo /></div>
+                <Tabs active={current} />
+                <div className="topbar-right">
+                  <button className="btn btn-primary md cta-create" onClick={() => go('/link')} aria-label="Create link">
+                    <Link2 size={18} strokeWidth={2.4} /><span className="hide-narrow">Create link</span>
+                  </button>
+                </div>
+              </header>
+            )}
+            {chrome && user && (
+              <nav className={`bottom-nav${NAV.some((n) => n.path === current) ? '' : ' no-pill'}`} aria-label="Main" style={{ ['--i' as string]: Math.max(0, NAV.findIndex((n) => n.path === current)) }}>
+                <span className="bottom-pill" aria-hidden />
+                {NAV.map(({ path, label, icon: I }) => {
+                  const on = current === path
+                  return (
+                    <button key={path} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined} aria-label={label} title={label} onClick={() => go(path)}>
+                      {on && SOLID[path] ? SOLID[path] : <I size={24} strokeWidth={on ? 2.6 : 2} />}
+                    </button>
+                  )
+                })}
+              </nav>
+            )}
+            {page}
+            {!EMBED && NETWORK === 'chipnet' && <span className="badge neutral demo-chip"><span className="dot" style={{ color: '#f5a524' }} /><span>Chipnet<span className="hide-sm">, test coins only</span></span></span>}
+          </div>
+        </AccountProvider>
+      </Ctx.Provider>
+    </ToastProvider>
   )
 }
