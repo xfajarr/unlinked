@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Check, ChevronRight, Copy, KeyRound, ScanLine } from 'lucide-react'
+import { Check, ChevronRight, Clock, Copy, Info, KeyRound, ScanLine, ShieldCheck } from 'lucide-react'
 import Scanner from './Scanner'
-import { RollingNumber, TokenIcon } from '../ui'
+import { Modal, RollingNumber, TokenIcon } from '../ui'
 import { PaymentModal, PaymentRow } from './PaymentParts'
 import { go } from '../App'
 import { useAccount } from '../app/account'
@@ -21,6 +21,30 @@ function CopyHandle({ handle }: { handle: string }) {
 }
 
 const heroBch = (sats: number) => (sats / 1e8).toFixed(8).replace(/(\.\d{4}\d*?)0+$/, '$1')
+const heroUsd = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+function BalanceInfo({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal title="Private and arriving" onClose={onClose}>
+      <div className="bal-info">
+        <div className="bal-info-row">
+          <span className="bal-ico private"><ShieldCheck size={18} strokeWidth={2.4} /></span>
+          <div>
+            <h3>Private</h3>
+            <p>Money inside Unlinked Shield, our zero-knowledge pool on Bitcoin Cash. Nobody can see who sent it, who holds it or how much. Sending to an @username from here stays private too.</p>
+          </div>
+        </div>
+        <div className="bal-info-row">
+          <span className="bal-ico arriving"><Clock size={18} strokeWidth={2.4} /></span>
+          <div>
+            <h3>Arriving</h3>
+            <p>Payments that just landed at your one-time addresses. They already look unrelated to you on-chain, and the app moves each one into Shield for you, for a fee of about 32,000 sats (a few cents). Payments under about 37,000 sats stay here, because shielding them would cost more than they are worth.</p>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 export default function Dashboard() {
   const { stored, items, error, poll, shield, shielding, sats, price, history } = useAccount()
@@ -28,7 +52,8 @@ export default function Dashboard() {
   const [open, setOpen] = useState<Entry | null>(null)
   const loading = items === null || (SHIELD_LIVE && shield.sats === null && !shield.error)
   const recent = history.filter((e) => e.kind === 'in').slice(0, 5)
-  const usd = price ? fmtUsd((sats.total / 1e8) * price + sats.pusd) : null
+  const totalUsd = price ? (sats.total / 1e8) * price + sats.pusd : null
+  const [info, setInfo] = useState(false)
 
   return (
     <main className="main" style={{ maxWidth: 720 }}>
@@ -66,15 +91,29 @@ export default function Dashboard() {
             {loading ? (
               <div className="ap-skel ap-skel-hero" aria-label="Loading balance" />
             ) : (
-              <div className="hero-num bc-num"><RollingNumber value={heroBch(sats.total)} /><small> BCH</small></div>
+              totalUsd !== null
+                ? <div className="hero-num bc-num"><small>$</small><RollingNumber value={heroUsd(totalUsd)} /></div>
+                : <div className="hero-num bc-num"><RollingNumber value={heroBch(sats.total)} /><small> BCH</small></div>
             )}
-            <div className="bc-sub tnum">
-              {SHIELD_LIVE ? (
-                shield.error && shield.sats === null
-                  ? 'Can’t check your private balance right now'
-                  : <>{fmtBch(sats.private)} private, {fmtBch(sats.arriving)} arriving{usd ? ` (≈ ${usd})` : ''}</>
-              ) : usd ? `≈ ${usd}` : loading ? ' ' : 'Paid to one-time addresses only you can find'}
-            </div>
+            {SHIELD_LIVE ? (
+              shield.error && shield.sats === null ? (
+                <div className="bc-sub">Can’t check your private balance right now</div>
+              ) : (
+                <div className="bal-split">
+                  <button type="button" className="bal-chip private" onClick={() => setInfo(true)} title="Private: inside Unlinked Shield, hidden from everyone">
+                    <ShieldCheck size={14} strokeWidth={2.4} /><span className="tnum">{fmtBch(sats.private)} BCH</span> private
+                  </button>
+                  <button type="button" className="bal-chip arriving" onClick={() => setInfo(true)} title="Arriving: just paid to your one-time addresses, being made private">
+                    <Clock size={14} strokeWidth={2.4} /><span className="tnum">{fmtBch(sats.arriving)} BCH</span> arriving
+                  </button>
+                  <button type="button" className="bal-info-btn" onClick={() => setInfo(true)} aria-label="What do private and arriving mean?" title="What do private and arriving mean?">
+                    <Info size={16} strokeWidth={2.4} />
+                  </button>
+                </div>
+              )
+            ) : (
+              <div className="bc-sub tnum">{loading ? ' ' : 'Paid to one-time addresses only you can find'}</div>
+            )}
           </div>
 
           <div className="bc-actions">
@@ -84,6 +123,7 @@ export default function Dashboard() {
           </div>
         </section>
 
+        {info && <BalanceInfo onClose={() => setInfo(false)} />}
         {shielding && <ShieldingCard sats={shielding.sats} progress={shielding.progress} />}
 
         <section className="panel">
@@ -97,7 +137,10 @@ export default function Dashboard() {
                 <div className="row-title">Bitcoin Cash</div>
                 <div className="row-meta">{SHIELD_LIVE ? 'Private and arriving' : 'At one-time addresses'}</div>
               </div>
-              <div className="row-end"><div className="row-amt tnum">{loading ? '…' : fmtBch(sats.total)} BCH</div></div>
+              <div className="row-end">
+                <div className="row-amt tnum">{loading ? '…' : fmtBch(sats.total)} BCH</div>
+                {price && !loading && <div className="row-meta tnum">{fmtUsd((sats.total / 1e8) * price)}</div>}
+              </div>
             </div>
             {sats.pusd > 0 && (
               <div className="row token-row">

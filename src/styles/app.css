@@ -7,6 +7,7 @@
 .ap-err-text { color: var(--red-11); }
 .stack.center > .ap-err, .stack.center > .ap-hint { width: 100%; }
 .field-wrap + .ap-err, .field-wrap + .ap-hint { margin-top: 10px; }
+.pin.locked { opacity: 0.5; cursor: not-allowed; }
 .badge.ap-bad { background: #fdecea; color: var(--red-11); }
 
 .ap-words-input { height: auto; min-height: 112px; padding: 18px 24px; resize: none; line-height: 26px; font-size: 17px; display: block; font-family: var(--font); }
@@ -60,3 +61,17 @@
 .toast.error { background: var(--red-11); }
 /* backdrop-filter layers escape the landing phone mockup's rounded clip in Chrome, so the embedded app drops the blur */
 .embed .topbar, .embed .bottom-nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: #fff; }
+.bal-split { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.bal-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; }
+.bal-chip .tnum { font-weight: 600; }
+.bal-chip.private { background: var(--green-3, #e6f7ef); color: var(--green-11, #137a4b); }
+.bal-chip.arriving { background: var(--amber-3, #fff4e0); color: var(--amber-11, #9a5b00); }
+.bal-info-btn { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-10); cursor: pointer; }
+.bal-info-btn:hover { background: var(--line); color: var(--ink-12); }
+.bal-info { display: grid; gap: 16px; }
+.bal-info-row { display: flex; gap: 12px; align-items: flex-start; }
+.bal-info-row h3 { margin: 4px 0 4px; font-size: 16px; }
+.bal-info-row p { margin: 0; color: var(--ink-11); font-size: 14px; line-height: 1.5; }
+.bal-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; }
+.bal-ico.private { background: var(--green-3, #e6f7ef); color: var(--green-11, #137a4b); }
+.bal-ico.arriving { background: var(--amber-3, #fff4e0); color: var(--amber-11, #9a5b00); }
