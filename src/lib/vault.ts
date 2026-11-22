@@ -1,7 +1,9 @@
 // Receiver keys live only on this device (spec 6): the mnemonic is encrypted with a password-derived key
-// (PBKDF2-SHA256, 600k iterations, AES-256-GCM) and kept in localStorage. Unlocked keys stay in memory.
+// (PBKDF2-SHA256, 600k iterations, AES-256-GCM) and kept in localStorage. Unlocked keys stay in memory, and
+// session.ts can carry them across a reload until the auto-lock window runs out.
 import { useSyncExternalStore } from 'react'
 import { toHex as binToHex } from './hex'
+import { clearActivity, clearSession, getAutoLock, loadSession, saveAutoLock, saveSession, stillFresh, touch, watchIdle } from './session'
 import type { ReceiverKeys } from './stealth'
 
 // libauth and circomlibjs (WebAssembly) load only in the browser, on first use
@@ -48,8 +50,9 @@ function write(s: Stored | null) {
   emit()
 }
 
-type State = { stored: Stored | null; keys: ReceiverKeys | null; mnemonic: string | null }
-let state: State = { stored: null, keys: null, mnemonic: null }
+/** restoring: a reload is decrypting the saved session, so the Unlock screen shouldn't flash */
+type State = { stored: Stored | null; keys: ReceiverKeys | null; mnemonic: string | null; restoring: boolean }
+let state: State = { stored: null, keys: null, mnemonic: null, restoring: false }
 const subs = new Set<() => void>()
 function emit() {
   state = { ...state, stored: read() }
@@ -64,8 +67,56 @@ const getSnapshot = () => {
   }
   return state
 }
-const serverSnapshot: State = { stored: null, keys: null, mnemonic: null }
+const serverSnapshot: State = { stored: null, keys: null, mnemonic: null, restoring: false }
 export const useVault = () => useSyncExternalStore(subscribe, getSnapshot, () => serverSnapshot)
+
+let stopIdle: (() => void) | null = null
+function startSession(mnemonic: string) {
+  stopIdle?.()
+  stopIdle = null
+  if (typeof window === 'undefined') return
+  if (getAutoLock() === 0) return void clearSession()
+  touch()
+  void saveSession(mnemonic)
+  stopIdle = watchIdle(lock)
+}
+function endSession() {
+  stopIdle?.()
+  stopIdle = null
+  void clearSession()
+}
+
+async function restore() {
+  try {
+    const mnemonic = await loadSession()
+    const s = read()
+    if (!mnemonic || !s || state.keys) return
+    const { keysFromMnemonic } = await stealth()
+    const keys = keysFromMnemonic(mnemonic)
+    if (binToHex(keys.scanPub) !== s.scanPub || binToHex(keys.spendPub) !== s.spendPub) return void clearSession()
+    state = { ...state, keys, mnemonic }
+    startSession(mnemonic)
+  } catch {
+    void clearSession()
+  } finally {
+    state = { ...state, restoring: false }
+    emit()
+  }
+}
+
+if (typeof window !== 'undefined') {
+  if (read() && stillFresh()) {
+    state = { ...state, restoring: true }
+    void restore()
+  } else void clearSession()
+}
+
+/** Minutes of inactivity before locking; 0 locks on every reload. */
+export function setAutoLock(min: number) {
+  saveAutoLock(min)
+  if (state.mnemonic) startSession(state.mnemonic)
+  else void clearSession()
+}
 
 export async function createVault(handle: string, password: string) {
   const { newMnemonic, keysFromMnemonic } = await stealth()
@@ -76,6 +127,7 @@ export async function createVault(handle: string, password: string) {
   const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(password, salt), enc.encode(mnemonic))
   const shieldPk = await shieldPkP
   state = { ...state, keys, mnemonic }
+  startSession(mnemonic)
   write({ handle, salt: b64(salt), iv: b64(iv), data: b64(data), backedUp: false, scanPub: binToHex(keys.scanPub), spendPub: binToHex(keys.spendPub) })
   return { mnemonic, scanPub: binToHex(keys.scanPub), spendPub: binToHex(keys.spendPub), authPub: binToHex(keys.authPub), shieldPk }
 }
@@ -88,6 +140,7 @@ export async function unlock(password: string): Promise<void> {
     const mnemonic = dec.decode(plain)
     const { keysFromMnemonic } = await stealth()
     state = { ...state, keys: keysFromMnemonic(mnemonic), mnemonic }
+    startSession(mnemonic)
     emit()
   } catch {
     throw new Error('Wrong password')
@@ -95,6 +148,7 @@ export async function unlock(password: string): Promise<void> {
 }
 
 export function lock() {
+  endSession()
   state = { ...state, keys: null, mnemonic: null }
   emit()
 }
@@ -103,7 +157,9 @@ export function markBackedUp() {
   if (s) write({ ...s, backedUp: true })
 }
 export function forget() {
-  state = { stored: null, keys: null, mnemonic: null }
+  endSession()
+  clearActivity()
+  state = { stored: null, keys: null, mnemonic: null, restoring: false }
   write(null)
 }
 export const currentKeys = () => state.keys

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server } from 'lucide-react'
+import { ChevronDown, ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server, Timer } from 'lucide-react'
 import { Avatar, CopyButton, Modal, ModalCancel, Switch } from '../ui'
 import { go } from '../App'
 import { useAccount } from '../app/account'
@@ -7,7 +7,8 @@ import { clearHistory } from '../app/history'
 import { errMsg, fmtBch, linkHost } from '../app/format'
 import { revealWords } from '../app/vaultio'
 import { FULCRUM_SERVERS, NETWORK } from '../lib/config'
-import { forget, lock, markBackedUp } from '../lib/vault'
+import { AUTOLOCK_OPTIONS, getAutoLock } from '../lib/session'
+import { forget, lock, markBackedUp, setAutoLock } from '../lib/vault'
 
 function RecoveryPhrase({ backedUp, onDone }: { backedUp: boolean; onDone: () => void }) {
   const [pw, setPw] = useState('')
@@ -66,9 +67,10 @@ function RecoveryPhrase({ backedUp, onDone }: { backedUp: boolean; onDone: () =>
 export default function Settings() {
   const { stored, history, rescan, items } = useAccount()
   const [modal, setModal] = useState<'phrase' | 'servers' | 'forget' | null>(() =>
-    new URLSearchParams(window.location.hash.split('?')[1] ?? '').has('backup') ? 'phrase' : null,
+    new URLSearchParams(window.location.search).has('backup') ? 'phrase' : null,
   )
   const [rescanning, setRescanning] = useState(false)
+  const [autoLock, setAutoLockState] = useState(getAutoLock)
   const received = history.filter((e) => e.kind === 'in')
   const total = received.reduce((s, e) => s + (e.kind === 'in' ? e.sats : 0), 0)
 
@@ -111,6 +113,22 @@ export default function Settings() {
           <span className="muted" style={{ marginLeft: 'auto', fontSize: 16 }}>{NETWORK}</span>
           <ChevronRight className="chev" size={22} style={{ marginLeft: 8 }} />
         </button>
+        <label className="nav-row" style={{ cursor: 'pointer' }}>
+          <span className="ico"><Timer size={24} /></span>Auto-lock
+          <select
+            className="muted"
+            style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: 0, font: 'inherit', fontSize: 16, textAlign: 'right', cursor: 'pointer', padding: '4px 0' }}
+            value={autoLock}
+            onChange={(e) => {
+              const min = Number(e.target.value)
+              setAutoLockState(min)
+              setAutoLock(min)
+            }}
+          >
+            {AUTOLOCK_OPTIONS.map((o) => <option key={o.min} value={o.min}>{o.label}</option>)}
+          </select>
+          <ChevronDown className="chev" size={22} style={{ marginLeft: 8, pointerEvents: 'none' }} />
+        </label>
         <button className="nav-row" onClick={lock}>
           <span className="ico"><Lock size={24} /></span>Lock
         </button>

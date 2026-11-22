@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Avatar, Logo } from '../ui'
 import { go } from '../App'
-import { unlock } from '../lib/vault'
+import { unlock, useVault } from '../lib/vault'
 import { errMsg } from './format'
 
 export default function Unlock({ handle }: { handle: string }) {
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { restoring } = useVault()
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,7 +32,7 @@ export default function Unlock({ handle }: { handle: string }) {
         <div />
       </header>
       <main className="main narrow">
-        <form className="stack center ap-gate" onSubmit={submit}>
+        {!restoring && <form className="stack center ap-gate" onSubmit={submit}>
           <div style={{ display: 'inline-block' }}><Avatar handle={handle} size={76} /></div>
           <div>
             <h1 className="page-title">Welcome back</h1>
@@ -53,7 +54,7 @@ export default function Unlock({ handle }: { handle: string }) {
             {busy ? <><Loader2 size={18} className="spin" />Unlocking</> : 'Unlock'}
           </button>
           <button type="button" className="btn-ghost" onClick={() => go('/onboarding?restore=1')}>Forgot your password? Use your 12 words</button>
-        </form>
+        </form>}
       </main>
     </div>
   )
