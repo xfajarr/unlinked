@@ -614,7 +614,7 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
         </>
       )}
       {wcUri && (
-        <Modal title="Scan with your wallet" onClose={() => setWcUri(null)}>
+        <Modal title="Scan with your wallet" onClose={() => (setWcUri(null), setSending(null))}>
           <div className="center"><div className="pay-qr"><QRCodeSVG value={wcUri} size={220} level="M" fgColor="#0b0d14" aria-label="WalletConnect QR code" /></div></div>
           <div className="link-box"><span className="url mono pay-addr">{wcUri}</span><CopyButton text={wcUri} label="Copy link" /></div>
           <p className="help">Open a WalletConnect wallet such as MetaMask, Rainbow or Trust Wallet and scan this code.</p>
