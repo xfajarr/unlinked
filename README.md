@@ -28,6 +28,13 @@ Built for BCH BLAZE 2026.
 - **Cost:** a pool transaction is about 31 kB, so the fee is about 32,000 sat.
 - **Client:** proofs are made in the browser (`src/lib/shield/`, Web Worker), in 8 to 23 s. Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance.
 
+**Live on BCH mainnet:** BCHN mainnet nodes accepted the pool and its first three Groth16-verified transactions. Each verifier input uses 82% to 88% of its standard op-cost budget.
+- **Pool:** `bitcoincash:pwtm4nmlq66z9sxftgrjnanhku97ctyfxhrnccf0eqqalymceqhk624p0ztws`
+- **Genesis:** [`560fb1eb…526453c`](https://blockchair.com/bitcoin-cash/transaction/560fb1eb7318f0695ee2a7aa96d2d1ee973c7b0292743c07a973e0e88526453c)
+- **Deposit** of 200,000 sat: [`4f66907e…9d50214`](https://blockchair.com/bitcoin-cash/transaction/4f66907e464bde42ba8a266cb0b4b82e3b76f20ab3d435fadad5a5e309d50214), 31,378 B.
+- **Private transfer:** [`20cbbbf2…faccc51`](https://blockchair.com/bitcoin-cash/transaction/20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51), 31,203 B.
+- **Withdraw** of 100,000 sat: [`57fb44fd…97be5a2`](https://blockchair.com/bitcoin-cash/transaction/57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2), 31,262 B.
+
 **Trusted setup (disclosure):**
 - Phase 1 is the PSE perpetual powers of tau (`ppot_0080_18`).
 - Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before it holds meaningful funds.
