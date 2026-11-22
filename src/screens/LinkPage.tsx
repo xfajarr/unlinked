@@ -1,9 +1,13 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, ExternalLink, MessageCircle, MoreHorizontal, Send, X, Zap } from 'lucide-react'
 import { Avatar, ChainIcon, CopyButton, XIcon } from '../ui'
-import { useStore } from '../App'
 import type { ChainId } from '../data'
+import { useAccount } from '../app/account'
+import { linkFor, linkHost } from '../app/format'
+import { xchainTokens } from '../lib/api'
+import { fingerprint } from '../lib/fingerprint'
+import { XCHAIN_ENABLED } from '../lib/config'
 
 function Sparkle({ className }: { className: string }) {
   return (
@@ -14,18 +18,32 @@ function Sparkle({ className }: { className: string }) {
 const SHOWN_CHAINS: ChainId[] = ['bch', 'ethereum', 'base', 'arbitrum', 'solana', 'tron']
 
 export default function LinkPage() {
-  const { user } = useStore()
-  const handle = user!.handle
+  const { stored } = useAccount()
+  const handle = stored.handle
+  const [accepts, setAccepts] = useState<{ chains: number; tokens: number } | null>(null)
+  const [fp, setFp] = useState<string | null>(null)
+  useEffect(() => {
+    fingerprint(stored.scanPub, stored.spendPub).then(setFp, () => setFp(null))
+  }, [stored.scanPub, stored.spendPub])
+  useEffect(() => {
+    if (!XCHAIN_ENABLED) return
+    let live = true
+    xchainTokens()
+      .then((all) => live && setAccepts({ chains: new Set(all.map((t) => t.blockchain)).size, tokens: all.length }))
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [])
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const qrRef = useRef<HTMLDivElement>(null)
 
-  // one link, one QR: they follow the optional amount and note
   const q = new URLSearchParams()
   if (Number(amount) > 0) q.set('amount', amount)
   if (note.trim()) q.set('note', note.trim())
   const path = `@${handle}${q.toString() ? `?${q}` : ''}`
-  const url = `https://unlinked.cash/${path}`
+  const url = linkFor(handle) + (q.toString() ? `?${q}` : '')
   const requesting = Number(amount) > 0 || note.trim() !== ''
   const msg = encodeURIComponent(
     Number(amount) > 0 ? `Pay me $${amount}${note.trim() ? ` for ${note.trim()}` : ''}, privately: ${url}` : `Pay me privately: ${url}`,
@@ -51,15 +69,13 @@ export default function LinkPage() {
           </div>
         </div>
         <div className="hstack" style={{ gap: 10 }}>
-          <a className="btn btn-secondary md" href={`#/pay/${path}`} style={{ textDecoration: 'none' }}><ExternalLink size={18} />Preview</a>
+          <a className="btn btn-secondary md" href={`/${path}`} style={{ textDecoration: 'none' }}><ExternalLink size={18} />Preview</a>
           <button className="btn btn-secondary md" onClick={downloadQr}><Download size={18} />Save QR</button>
         </div>
       </div>
 
       <section className="card link-hero">
-        {/* left: what the payer scans */}
         <div className="link-hero-qr">
-          {/* scenery: purely decorative */}
           <div className="scene" aria-hidden>
             <img className="scene-ribbon" src="/art/ribbon.webp" alt="" />
             <img className="scene-ribbon two" src="/art/ribbon.webp" alt="" />
@@ -88,18 +104,18 @@ export default function LinkPage() {
           </div>
           <div className="request-chip" data-on={requesting}>
             <Zap size={15} strokeWidth={2.4} />
-            {requesting ? <>Asking {Number(amount) > 0 ? <b className="tnum">${amount}</b> : 'any amount'}{note.trim() && <> · {note.trim()}</>}</> : 'Any amount, any token'}
+            {requesting ? <>Asking {Number(amount) > 0 ? <b className="tnum">${amount}</b> : 'any amount'}{note.trim() && <>, {note.trim()}</>}</> : XCHAIN_ENABLED ? 'Any amount, any token' : 'Any amount'}
           </div>
         </div>
 
-        {/* right: configure + share */}
         <div className="link-hero-side">
           <div>
             <h2 className="label">Your link</h2>
             <div className="link-box" style={{ marginTop: 10 }}>
-              <span className="url" title={url}><span className="dim">unlinked.cash/</span>{path}</span>
+              <span className="url" title={url}><span className="dim">{linkHost()}/</span>{path}</span>
               <CopyButton text={url} label="Copy link" />
             </div>
+            {fp && <p className="muted" style={{ margin: '10px 4px 0', fontSize: 14 }}>Key fingerprint <span className="mono soft">{fp}</span>. Payers see it on your pay page, so nobody can swap your keys unnoticed.</p>}
           </div>
 
           <div>
@@ -140,9 +156,11 @@ export default function LinkPage() {
 
           <div className="accepts">
             <div className="chain-row" aria-label="Supported chains">
-              {SHOWN_CHAINS.map((c) => <span key={c} className="chain-dot"><ChainIcon chain={c} size={28} /></span>)}
+              {(XCHAIN_ENABLED ? SHOWN_CHAINS : (['bch'] as ChainId[])).map((c) => <span key={c} className="chain-dot"><ChainIcon chain={c} size={28} /></span>)}
             </div>
-            <span className="muted" style={{ fontSize: 14 }}>Accepts <b className="tnum soft">39</b> chains and <b className="tnum soft">232</b> tokens, paid out in BCH</span>
+            <span className="muted" style={{ fontSize: 14 }}>
+              {!XCHAIN_ENABLED ? 'Accepts BCH on chipnet, the test network' : accepts ? <>Accepts <b className="tnum soft">{accepts.chains}</b> chains and <b className="tnum soft">{accepts.tokens}</b> tokens, paid out in BCH</> : 'Accepts BCH and tokens from other chains, paid out in BCH'}
+            </span>
           </div>
         </div>
       </section>

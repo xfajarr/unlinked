@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
-import { PAYMENTS, SENT, TOKENS, type Payment, type TokenId } from '../data'
-import { PaymentModal, PaymentRow } from './PaymentParts'
-import { TokenIcon } from '../ui'
+import { PaymentModal, PaymentRow, titleOf } from './PaymentParts'
+import { go } from '../App'
+import { useAccount } from '../app/account'
+import type { Entry } from '../app/history'
 
 const PAGE = 10
+type Filter = 'all' | 'in' | 'out'
+const FILTERS: { id: Filter; label: string }[] = [{ id: 'all', label: 'All' }, { id: 'in', label: 'Received' }, { id: 'out', label: 'Sent' }]
+const isOut = (e: Entry) => e.kind === 'send' || e.kind === 'withdraw'
 
-function dayKey(minutesAgo: number) {
-  const d = new Date(Date.now() - minutesAgo * 60_000)
+const dayKey = (at: number) => {
+  const d = new Date(at)
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 function dayLabel(key: number) {
@@ -19,24 +23,23 @@ function dayLabel(key: number) {
 }
 
 export default function Transactions() {
-  const [token, setToken] = useState<TokenId | 'all'>(() => (new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('token') as TokenId | null) ?? 'all')
+  const { history, items, error, poll } = useAccount()
+  const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
   const [page, setPage] = useState(0)
-  const [open, setOpen] = useState<Payment | null>(null)
+  const [open, setOpen] = useState<Entry | null>(null)
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    const all = [...SENT.map((s) => ({ ...s, minutesAgo: Math.max(0, Math.round((Date.now() - s.out!.at) / 60000)) })), ...PAYMENTS]
-    return all.filter((p) => (token === 'all' || p.token === token) && (!needle || (p.note ?? 'payment received').toLowerCase().includes(needle)))
-  }, [token, q])
-  const sentCount = filtered.filter((p) => p.out).length
-  const recvCount = filtered.length - sentCount
+    return history.filter((e) => (filter === 'all' || (filter === 'out' ? isOut(e) : e.kind === 'in')) && (!needle || titleOf(e).toLowerCase().includes(needle) || ('to' in e && e.to.includes(needle))))
+  }, [history, filter, q])
+  const count = (f: Filter) => history.filter((e) => f === 'all' || (f === 'out' ? isOut(e) : e.kind === 'in')).length
+  const recv = filtered.filter((e) => e.kind === 'in').length
+  const sent = filtered.filter(isOut).length
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
   const summary = q.trim()
     ? `${plural(filtered.length, 'result')} for “${q.trim()}”`
-    : (sentCount
-        ? [recvCount && `${recvCount} received`, `${sentCount} sent`].filter(Boolean).join(' · ')
-        : recvCount ? `${plural(recvCount, 'payment')} received` : 'No payments') + (token === 'all' || !filtered.length ? '' : ` in ${token}`)
+    : [recv && `${recv} received`, sent && `${sent} sent`].filter(Boolean).join(', ') || 'No payments yet'
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE))
   const visible = filtered.slice(page * PAGE, page * PAGE + PAGE)
   const goPage = (n: number) => {
@@ -44,27 +47,20 @@ export default function Transactions() {
     document.querySelector('.frame')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  // group the visible rows by day, keeping each day's full total
-  const groups: { key: number; items: Payment[]; sum: number }[] = []
-  for (const p of visible) {
-    const key = dayKey(p.minutesAgo)
+  const groups: { key: number; items: Entry[] }[] = []
+  for (const e of visible) {
+    const key = dayKey(e.at)
     let g = groups[groups.length - 1]
-    if (!g || g.key !== key) {
-      g = { key, items: [], sum: filtered.filter((x) => dayKey(x.minutesAgo) === key).reduce((s, x) => s + x.bch, 0) }
-      groups.push(g)
-    }
-    g.items.push(p)
+    if (!g || g.key !== key) groups.push((g = { key, items: [] }))
+    g.items.push(e)
   }
-
-  const counts = PAYMENTS.reduce<Record<string, number>>((m, p) => ({ ...m, [p.token]: (m[p.token] ?? 0) + 1 }), {})
-  const filters: (TokenId | 'all')[] = ['all', ...(Object.keys(TOKENS) as TokenId[]).filter((t) => counts[t])]
 
   return (
     <main className="main" style={{ maxWidth: 720 }}>
       <div className="page-head inline">
         <div>
           <h1 className="page-title">Activity</h1>
-          <p className="page-sub tnum">{summary}</p>
+          <p className="page-sub tnum">{items === null && !history.length ? 'Checking for payments' : summary}</p>
         </div>
       </div>
 
@@ -72,34 +68,46 @@ export default function Transactions() {
         <div className="frame-bar pay-filters">
           <div className="field-wrap search">
             <Search size={18} className="field-prefix" style={{ left: 16 }} />
-            <input className="field" value={q} onChange={(e) => { setQ(e.target.value); setPage(0) }} placeholder="Search notes" aria-label="Search notes" />
+            <input className="field" value={q} onChange={(e) => { setQ(e.target.value); setPage(0) }} placeholder="Search" aria-label="Search activity" />
             {q && <button className="field-end orb sm" style={{ width: 32, height: 32 }} onClick={() => setQ('')} aria-label="Clear search"><X size={16} /></button>}
           </div>
-          <div className="chip-row" role="tablist" aria-label="Filter by token">
-            {filters.map((t) => (
-              <button key={t} role="tab" aria-selected={token === t} className={`chip${token === t ? ' on' : ''}`} onClick={() => { setToken(t); setPage(0) }}>
-                {t !== 'all' && <TokenIcon token={t} size={20} />}
-                {t === 'all' ? 'All' : t}<span className="chip-count tnum">{t === 'all' ? PAYMENTS.length : counts[t]}</span>
+          <div className="chip-row" role="tablist" aria-label="Filter">
+            {FILTERS.map((f) => (
+              <button key={f.id} role="tab" aria-selected={filter === f.id} className={`chip${filter === f.id ? ' on' : ''}`} onClick={() => { setFilter(f.id); setPage(0) }}>
+                {f.label}<span className="chip-count tnum">{count(f.id)}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {error && (
+          <div className="panel ap-inline-err">
+            <span className="row-main">Couldn’t check for payments right now.</span>
+            <button className="btn btn-secondary sm" onClick={poll}>Retry</button>
+          </div>
+        )}
+
+        {!history.length && (items === null || items.length > 0) ? (
+          !error && <div className="panel">{[0, 1, 2].map((i) => <div key={i} className="ap-skel ap-skel-row" />)}</div>
+        ) : !history.length ? (
           <div className="panel center" style={{ padding: 40 }}>
-            <div className="soft" style={{ fontSize: 17 }}>No payments match</div>
-            <p className="muted" style={{ margin: '4px 0 16px' }}>Try another token or search.</p>
-            <button className="btn btn-secondary md" onClick={() => { setToken('all'); setQ('') }}>Clear filters</button>
+            <div className="soft" style={{ fontSize: 17 }}>No payments yet</div>
+            <p className="muted" style={{ margin: '4px 0 16px' }}>Share your link and payments show up here.</p>
+            <button className="btn btn-secondary md" onClick={() => go('/link')}>Share your link</button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="panel center" style={{ padding: 40 }}>
+            <div className="soft" style={{ fontSize: 17 }}>Nothing matches</div>
+            <p className="muted" style={{ margin: '4px 0 16px' }}>Try another filter or search.</p>
+            <button className="btn btn-secondary md" onClick={() => { setFilter('all'); setQ('') }}>Clear filters</button>
           </div>
         ) : (
           <div className="panel" style={{ padding: '6px 24px 10px' }}>
             {groups.map((g) => (
               <div key={g.key} className="day-group">
-                <div className="day-head">
-                  <span>{dayLabel(g.key)}</span>
-                </div>
+                <div className="day-head"><span>{dayLabel(g.key)}</span></div>
                 <div className="rows">
-                  {g.items.map((p) => <PaymentRow key={p.id} p={p} onOpen={setOpen} />)}
+                  {g.items.map((e) => <PaymentRow key={e.kind + e.id} e={e} onOpen={setOpen} />)}
                 </div>
               </div>
             ))}
@@ -108,7 +116,7 @@ export default function Transactions() {
 
         {pages > 1 && (
           <nav className="pager" aria-label="Pages">
-            <span className="pager-info tnum">{page * PAGE + 1}–{Math.min(filtered.length, page * PAGE + PAGE)} of {filtered.length}</span>
+            <span className="pager-info tnum">{page * PAGE + 1} to {Math.min(filtered.length, page * PAGE + PAGE)} of {filtered.length}</span>
             <div className="pager-nums">
               <button className="pager-btn" onClick={() => goPage(page - 1)} disabled={page === 0} aria-label="Previous page"><ChevronLeft size={18} strokeWidth={2.4} /></button>
               {Array.from({ length: pages }, (_, i) => (
@@ -120,7 +128,7 @@ export default function Transactions() {
         )}
       </div>
 
-      {open && <PaymentModal p={open} onClose={() => setOpen(null)} />}
+      {open && <PaymentModal e={open} onClose={() => setOpen(null)} />}
     </main>
   )
 }
