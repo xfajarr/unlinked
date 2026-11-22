@@ -92,7 +92,7 @@ export default function Dashboard() {
               <div className="ap-skel ap-skel-hero" aria-label="Loading balance" />
             ) : (
               totalUsd !== null
-                ? <div className="hero-num bc-num"><small>$</small><RollingNumber value={heroUsd(totalUsd)} /></div>
+                ? <div className="hero-num bc-num"><span className="bc-cur">$</span><RollingNumber value={heroUsd(totalUsd)} /></div>
                 : <div className="hero-num bc-num"><RollingNumber value={heroBch(sats.total)} /><small> BCH</small></div>
             )}
             {SHIELD_LIVE ? (

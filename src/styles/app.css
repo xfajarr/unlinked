@@ -75,3 +75,4 @@
 .bal-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; }
 .bal-ico.private { background: var(--green-3, #e6f7ef); color: var(--green-11, #137a4b); }
 .bal-ico.arriving { background: var(--amber-3, #fff4e0); color: var(--amber-11, #9a5b00); }
+.bc-num .bc-cur { display: inline-block; vertical-align: top; font-size: 0.62em; line-height: 1; margin: 0.14em 0.04em 0 0; color: var(--ink-10); font-weight: 600; }
