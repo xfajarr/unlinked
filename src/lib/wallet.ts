@@ -129,7 +129,8 @@ export async function payWithWallet(p: WalletPay): Promise<string> {
     render('approve')
     const res = await Promise.race([
       mgr.signTransaction({
-        transaction: { transaction: L.binToHex(L.encodeTransaction(tx)), sourceOutputs, broadcast: true, userPrompt: `Private payment of ${p.amount} ${p.currency}` },
+        // the relay sends plain JSON, so BigInt and Uint8Array go in the extended format (<bigint: Xn>, <Uint8Array: 0x..>) wallets parse back
+        transaction: { transaction: L.binToHex(L.encodeTransaction(tx)), sourceOutputs: JSON.parse(L.stringify(sourceOutputs)) as typeof sourceOutputs, broadcast: true, userPrompt: `Private payment of ${p.amount} ${p.currency}` },
         inputPaths: chosen.map((c, i) => [i, c.name, c.index] as [number, string, number]),
       }),
       cancelP,
