@@ -48,28 +48,49 @@ export default function Scanner({ onClose }: { onClose: () => void }) {
     let stream: MediaStream | null = null
     let raf = 0
     let stopped = false
-    const Detector = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => BarcodeDetectorLike }).BarcodeDetector
-    if (!Detector || !navigator.mediaDevices?.getUserMedia) { setState('unsupported'); return }
-    const detector = new Detector({ formats: ['qr_code'] })
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(async (s) => {
+    const Native = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => BarcodeDetectorLike }).BarcodeDetector
+    if (!navigator.mediaDevices?.getUserMedia) { setState('unsupported'); return }
+    // iOS browsers (WebKit) have no BarcodeDetector, so decode frames with jsQR there
+    const makeDetect = async (): Promise<(v: HTMLVideoElement) => Promise<string | null>> => {
+      if (Native) {
+        const d = new Native({ formats: ['qr_code'] })
+        return async (v) => (await d.detect(v))[0]?.rawValue ?? null
+      }
+      const { default: jsQR } = await import('jsqr')
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+      return async (v) => {
+        if (!v.videoWidth) return null
+        const w = Math.min(640, v.videoWidth), h = Math.round((v.videoHeight / v.videoWidth) * w)
+        canvas.width = w
+        canvas.height = h
+        ctx.drawImage(v, 0, 0, w, h)
+        return jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' })?.data ?? null
+      }
+    }
+    Promise.all([makeDetect(), navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })])
+      .then(async ([detect, s]) => {
         if (stopped) { s.getTracks().forEach((t) => t.stop()); return }
         stream = s
         const v = video.current!
         v.srcObject = s
         await v.play()
         setState('scanning')
-        const tick = async () => {
+        let last = 0
+        const tick = async (t: number) => {
           if (stopped) return
-          try {
-            const codes = await detector.detect(v)
-            if (codes[0] && finish(codes[0].rawValue)) return
-          } catch { /* frame not ready */ }
+          if (t - last > 120) {
+            last = t
+            try {
+              const text = await detect(v)
+              if (text && finish(text)) return
+            } catch { /* frame not ready */ }
+          }
           raf = requestAnimationFrame(tick)
         }
-        tick()
+        raf = requestAnimationFrame(tick)
       })
-      .catch(() => setState('denied'))
+      .catch((e: unknown) => setState(e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : 'unsupported'))
     return () => {
       stopped = true
       cancelAnimationFrame(raf)
@@ -91,7 +112,7 @@ export default function Scanner({ onClose }: { onClose: () => void }) {
           <div className="scan-empty">
             <CameraOff size={26} />
             <div style={{ fontSize: 16, color: 'var(--ink-12)' }}>{state === 'denied' ? 'Camera access is off' : 'Scanning isn’t supported here'}</div>
-            <div className="muted" style={{ fontSize: 14 }}>{state === 'denied' ? 'Allow camera access in your browser settings.' : 'Try opening Unlinked in Chrome.'}</div>
+            <div className="muted" style={{ fontSize: 14 }}>{state === 'denied' ? 'Allow camera access in your browser settings.' : 'Your browser can’t open the camera here. Paste the link or address instead.'}</div>
           </div>
         )}
       </div>
