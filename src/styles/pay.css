@@ -179,3 +179,4 @@
   .xd-step.now .xd-ico::after { animation: none; transform: scale(1.25); opacity: 0.1; }
   .xd-step::after, .xd-ico, .xd-pill { transition: none; }
 }
+.pay-memo-warn { margin: 8px 4px 0; font-size: 13px; font-weight: 600; color: var(--red-11, #c5221f); }

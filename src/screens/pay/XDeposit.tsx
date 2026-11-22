@@ -81,7 +81,7 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
     const tick = async () => {
       if (inFlight) return
       inFlight = true
-      const s = await xchainStatus({ data: { depositAddress: addr } }).catch((): XStatus => 'UNKNOWN')
+      const s = await xchainStatus({ data: { depositAddress: addr, depositMemo: d.quote.depositMemo } }).catch((): XStatus => 'UNKNOWN')
       inFlight = false
       if (on && s !== 'UNKNOWN') setStatus(s)
     }
@@ -179,10 +179,21 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
         )}
       </div>
       {pending && (
-        <div className="link-box">
-          <span className="url mono pay-addr">{addr}</span>
-          <CopyButton text={addr} label="Copy deposit address" />
-        </div>
+        <>
+          <div className="link-box">
+            <span className="url mono pay-addr">{addr}</span>
+            <CopyButton text={addr} label="Copy deposit address" />
+          </div>
+          {d.quote.depositMemo && (
+            <>
+              <div className="link-box">
+                <span className="url mono pay-addr">Memo {d.quote.depositMemo}</span>
+                <CopyButton text={d.quote.depositMemo} label="Copy memo" />
+              </div>
+              <p className="pay-memo-warn">Add this memo to your transfer. Without it the deposit can't be matched to this payment.</p>
+            </>
+          )}
+        </>
       )}
       {status === 'REFUNDED' && <Notice>The swap didn't go through. Your {d.token.symbol} went back to your refund address.</Notice>}
       {status === 'FAILED' && <Notice>The swap failed. Your deposit goes back to your refund address.</Notice>}
