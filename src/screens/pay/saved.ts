@@ -13,7 +13,7 @@ export type Saved = {
   currency: Currency
   amount: string
   note: string
-  qr?: { amount: number; ot: OneTime }
+  qr?: { amount: number; ot: OneTime; shownAt?: number }
   deposit?: Deposit
   paid?: PaidInfo
 }
@@ -56,7 +56,7 @@ export function storeSaved(handle: string, s: Omit<Saved, 'savedAt'>) {
   const clean: Saved = {
     ...s,
     savedAt: Date.now(),
-    qr: s.qr && { amount: s.qr.amount, ot: publicOt(s.qr.ot) },
+    qr: s.qr && { amount: s.qr.amount, ot: publicOt(s.qr.ot), shownAt: s.qr.shownAt },
     deposit: s.deposit && { ...s.deposit, ot: publicOt(s.deposit.ot) },
   }
   try {

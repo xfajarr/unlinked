@@ -1,32 +1,29 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Check } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, Check, ExternalLink } from 'lucide-react'
 import { xchainStatus, xchainSubmit, type XQuote, type XStatus, type XToken } from '../../lib/api'
+import { EXPLORER_TX } from '../../lib/config'
 import type { Utxo } from '../../lib/fulcrum'
 import { satsToBch, waitForPayment } from '../../lib/payments'
 import type { OneTime } from '../../lib/stealth'
-import { CopyButton } from '../../ui'
-import { fmtCoin } from './format'
+import { CopyButton, TokenIcon } from '../../ui'
+import { ago, clock, fmtCoin } from './format'
 import type { PaidInfo } from './PaidScreen'
 import { txUrl, watchDeposit, type Seen } from './evmwatch'
 import { Notice, PayShell } from './PayShell'
 
+const ChainLogo = lazy(() => import('./xicons').then((m) => ({ default: m.ChainLogo })))
+
 /**
  * `status` is the last one seen, saved so a refresh after the deposit landed doesn't show the address again.
- * `fromBlock` is where the origin-chain watch starts; `submitted` is the tx hash already sent to 1Click.
+ * `fromBlock` is where the origin-chain watch starts; `submitted` is the tx hash already sent to 1Click; `seenAt` is when the deposit first showed up.
  */
-export type Deposit = { quote: XQuote; ot: OneTime; token: XToken; amount: string; chain: string; startedAt?: number; status?: XStatus; fromBlock?: number; submitted?: string }
+export type Deposit = { quote: XQuote; ot: OneTime; token: XToken; amount: string; chain: string; startedAt?: number; status?: XStatus; fromBlock?: number; submitted?: string; seenAt?: number }
 
-const STEPS = ['Waiting for your deposit', 'Swapping to BCH via NEAR Intents', 'Delivered to a one-time address']
 const POLL_MS = 5000
 const stepOf = (s: XStatus) => (s === 'SUCCESS' ? 3 : s === 'KNOWN_DEPOSIT_TX' || s === 'PROCESSING' ? 1 : 0)
 const isFinal = (s: XStatus) => s === 'SUCCESS' || s === 'REFUNDED' || s === 'FAILED'
 const isReceived = (s: XStatus) => s === 'KNOWN_DEPOSIT_TX' || s === 'PROCESSING' || s === 'SUCCESS' || s === 'INCOMPLETE_DEPOSIT'
-
-function sendBy(until: Date) {
-  const time = until.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return until.toDateString() === new Date().toDateString() ? time : `${until.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`
-}
 
 const elapsed = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -34,6 +31,23 @@ const elapsed = (ms: number) => {
 }
 
 const short = (h: string) => `${h.slice(0, 6)}…${h.slice(-4)}`
+
+type State = 'done' | 'now' | ''
+
+function Step({ state, icon, title, children }: { state: State; icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <li className={`xd-step ${state}`} aria-current={state === 'now' ? 'step' : undefined}>
+      <span className="xd-ico">
+        {icon}
+        {state === 'done' && <span className="xd-tick" aria-label="Done"><Check size={10} strokeWidth={3.6} /></span>}
+      </span>
+      <div className="xd-body">
+        <span className="xd-title">{title}</span>
+        <span className="xd-sub">{children}</span>
+      </div>
+    </li>
+  )
+}
 
 type Props = { handle: string; d: Deposit; onBack: () => void; onPaid: (p: PaidInfo) => void; onUpdate?: (p: Partial<Deposit>) => void }
 
@@ -58,6 +72,7 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
   update.current = onUpdate
   const [since] = useState(() => d.startedAt ?? Date.now())
   const [now, setNow] = useState(Date.now)
+  const [seenAt, setSeenAt] = useState(d.seenAt)
 
   useEffect(() => {
     if (final) return
@@ -97,26 +112,50 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
   }, [first?.hash])
 
   useEffect(() => {
-    if (!pending) return
-    const t = setInterval(() => setNow(Date.now()), 1000)
+    if (final) return
+    const t = setInterval(() => setNow(Date.now()), pending ? 1000 : 15_000)
     return () => clearInterval(t)
-  }, [pending])
+  }, [pending, final])
+
+  useEffect(() => {
+    if (!received || seenAt) return
+    const t = Date.now()
+    setSeenAt(t)
+    update.current?.({ seenAt: t })
+  }, [received])
 
   useEffect(() => waitForPayment(d.ot.address, setLanded), [d.ot.address])
 
   useEffect(() => {
     if (!delivered) return
     const sats = landed?.reduce((n, u) => n + u.value, 0) ?? 0
-    const info = { amount: fmtCoin(sats ? satsToBch(sats) : d.quote.amountOut), currency: 'BCH', address: d.ot.address, txid: landed?.[0]?.tx_hash }
+    const bch = sats ? satsToBch(sats) : Number(d.quote.amountOut)
+    const usd = (Number(d.quote.amountOutUsd) * bch) / Number(d.quote.amountOut)
+    const at = Date.now()
+    const info = { amount: fmtCoin(bch), currency: 'BCH', address: d.ot.address, txid: landed?.[0]?.tx_hash, usd: Number.isFinite(usd) ? usd : undefined, at, took: at - (seenAt ?? since) }
     const t = setTimeout(() => paid.current(info), 1200)
     return () => clearTimeout(t)
   }, [delivered, landed])
 
   const step = delivered ? 3 : Math.max(stepOf(status), seen ? 1 : 0)
-  const link = first && txUrl(chain, first.hash)
+  const hash = first?.hash ?? d.submitted
+  const link = hash && txUrl(chain, hash)
   const extra = transfers.length - 1
   const mins = Math.max(1, Math.ceil(d.quote.timeEstimate / 60))
   const until = new Date(d.quote.deadline)
+  const eta = (seenAt ?? since) + mins * 60_000
+  const sats = landed?.reduce((n, u) => n + u.value, 0) ?? 0
+  const bchTx = landed?.[0]?.tx_hash
+  const at = (i: number): State => (i < step ? 'done' : i === step ? 'now' : '')
+  const [phase, tone] = delivered
+    ? ['Delivered', 'green']
+    : status === 'REFUNDED'
+      ? ['Refunded', 'warn']
+      : status === 'FAILED' || status === 'INCOMPLETE_DEPOSIT'
+        ? ['Refunding', 'warn']
+        : step > 0
+          ? ['Swapping', 'blue']
+          : ['Waiting', 'neutral']
   return (
     <PayShell onBack={onBack}>
       <div className="center">
@@ -124,7 +163,7 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
           <>
             <span className="pay-ring" aria-hidden><Check size={32} strokeWidth={2.6} /></span>
             <h1 className="page-title pay-title-sm">Deposit received</h1>
-            <p className="page-sub">{d.amount} {d.token.symbol} on {d.chain}. Don't send it again.</p>
+            <p className="page-sub">Don't send it again.</p>
           </>
         ) : (
           <>
@@ -145,12 +184,6 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
           <CopyButton text={addr} label="Copy deposit address" />
         </div>
       )}
-      <div className="rows pay-rows">
-        <div className="row"><span className="row-main muted">@{handle} gets</span><span className="tnum">≈ {fmtCoin(d.quote.amountOut)} BCH</span></div>
-        <div className="row"><span className="row-main muted">Time</span><span>About {mins} min</span></div>
-      </div>
-      <p className="help">Lands on a one-time address. NEAR Intents never learns it's @{handle}.</p>
-
       {status === 'REFUNDED' && <Notice>The swap didn't go through. Your {d.token.symbol} went back to your refund address.</Notice>}
       {status === 'FAILED' && <Notice>The swap failed. Your deposit goes back to your refund address.</Notice>}
       {status === 'INCOMPLETE_DEPOSIT' && <Notice>We got less than {d.amount} {d.token.symbol}, so the swap can't run as quoted. It goes back to your refund address.</Notice>}
@@ -160,27 +193,72 @@ export function XDeposit({ handle, d, onBack, onPaid, onUpdate }: Props) {
         </Notice>
       )}
 
-      {!final || delivered ? (
-        <ol className="pay-steps" role="status" aria-label="Progress">
-          {STEPS.map((label, i) => (
-            <li key={label} className={i < step ? 'done' : i === step ? 'now' : ''}>
-              <span className="pay-step-b">{i < step ? <Check size={14} strokeWidth={3} /> : i === step ? <span className="pay-pulse" /> : i + 1}</span>
-              <span>
-                {seen && i === 0 ? `Deposit seen on ${d.chain}` : seen && i === 1 && stepOf(status) < 1 && !delivered ? 'NEAR Intents is picking it up' : label}
-                {pending && i === 0 && <span className="pay-step-meta">Checking every {POLL_MS / 1000} s, {elapsed(now - since)} so far</span>}
-                {i === 0 && first && (link ? (
-                  <a className="pay-step-meta mono pay-tx" href={link} target="_blank" rel="noreferrer">{short(first.hash)}</a>
-                ) : <span className="pay-step-meta mono">{short(first.hash)}</span>)}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <button type="button" className="btn btn-secondary block pay-gap-sm" onClick={onBack}>Start over</button>
-      )}
+      <section className={`xd${delivered ? ' all' : ''}`} aria-label="Payment progress">
+        <div className="xd-sum">
+          <div className="xd-top">
+            <span className={`xd-pill ${tone}`} role="status">
+              {delivered ? <Check size={13} strokeWidth={3} aria-hidden /> : tone !== 'warn' && <span className="pay-pulse" aria-hidden />}
+              {phase}
+            </span>
+            {!final && <span className="xd-k">Usually takes about {mins} min</span>}
+          </div>
+          <div className="xd-leg">
+            <span className="xd-k">You send</span>
+            <span className="xd-v"><b>{d.amount} {d.token.symbol}</b></span>
+            <span className="xd-k">on {d.chain}</span>
+          </div>
+          <ArrowRight className="xd-arrow" size={16} strokeWidth={2.4} aria-hidden />
+          <div className="xd-leg">
+            <span className="xd-k">@{handle} gets</span>
+            <span className="xd-v"><b>{`≈\u00a0${fmtCoin(d.quote.amountOut)} BCH`}</b></span>
+          </div>
+        </div>
+        {(!final || delivered) && (
+          <ol className="xd-steps" aria-label="Progress">
+            <Step
+              state={at(0)}
+              icon={<Suspense fallback={<span className="xd-blank" />}><ChainLogo id={chain} size={36} /></Suspense>}
+              title={received ? `Deposit seen on ${d.chain}` : `Waiting for your ${d.amount} ${d.token.symbol}`}
+            >
+              {received ? (
+                <>
+                  <span className="xd-amt">{d.amount} {d.token.symbol}</span>
+                  {hash && (link ? (
+                    <a className="xd-tx mono" href={link} target="_blank" rel="noreferrer">{short(hash)}<ExternalLink size={12} strokeWidth={2.4} aria-hidden /></a>
+                  ) : <span className="mono">{short(hash)}</span>)}
+                  {seenAt && <span className="xd-time">{ago(seenAt, now)}</span>}
+                </>
+              ) : `Checking every ${POLL_MS / 1000} s, ${elapsed(now - since)} so far`}
+            </Step>
+            <Step state={at(1)} icon={<span className="xd-glyph"><ArrowLeftRight size={17} strokeWidth={2.4} /></span>} title="Swapping to BCH">
+              {at(1) === 'done' ? (
+                `Swapped for ${sats ? fmtCoin(satsToBch(sats)) : `≈ ${fmtCoin(d.quote.amountOut)}`} BCH`
+              ) : at(1) !== 'now' ? (
+                'NEAR Intents finds the best route'
+              ) : now > eta ? (
+                'Taking longer than usual, NEAR Intents is still working on it'
+              ) : (
+                <>
+                  <span>NEAR Intents finds the best route</span>
+                  <span className="xd-eta">ETA {clock(eta)}</span>
+                </>
+              )}
+            </Step>
+            <Step state={at(2)} icon={<TokenIcon token="BCH" size={36} />} title="Delivered privately">
+              {delivered && bchTx ? (
+                <>
+                  <span>Sent to a one-time address</span>
+                  <a className="xd-tx mono" href={EXPLORER_TX + bchTx} target="_blank" rel="noreferrer">{short(bchTx)}<ExternalLink size={12} strokeWidth={2.4} aria-hidden /></a>
+                </>
+              ) : `To a one-time address only @${handle} can find`}
+            </Step>
+          </ol>
+        )}
+      </section>
+      {final && !delivered && <button type="button" className="btn btn-secondary block pay-gap-sm" onClick={onBack}>Start over</button>}
       {status === 'PENDING_DEPOSIT' && !landed && (!first || sub === 'failed') && <SubmitTx depositAddress={addr} />}
       {pending && !Number.isNaN(until.getTime()) && (
-        <p className="help">Send before {sendBy(until)}. Later deposits are refunded.</p>
+        <p className="help">Send before {clock(until)}. Later deposits are refunded.</p>
       )}
     </PayShell>
   )

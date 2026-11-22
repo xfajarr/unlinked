@@ -51,3 +51,9 @@ export function ago(ts: number, now = Date.now()): string {
   if (d < 30) return d === 1 ? 'yesterday' : `${d} days ago`
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+export function clock(ts: number | Date): string {
+  const d = new Date(ts)
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return d.toDateString() === new Date().toDateString() ? time : `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`
+}

@@ -18,7 +18,7 @@ import type { Deposit } from './XDeposit'
 
 type Screen =
   | { k: 'form' }
-  | { k: 'qr'; amount: number; ot: OneTime | null; failed: boolean }
+  | { k: 'qr'; amount: number; ot: OneTime | null; failed: boolean; shownAt?: number }
   | { k: 'wallet'; amount: number; currency: Currency; ot: OneTime | null; error: string | null }
   | { k: 'chain' }
   | { k: 'deposit'; d: Deposit }
@@ -33,7 +33,7 @@ const stepOf = (s: Screen): Step => (s.k === 'form' ? '' : s.k)
 function fromSaved(step: string, s: Saved | null): Screen | null {
   switch (step) {
     case '': return FORM
-    case 'qr': return s?.qr ? { k: 'qr', amount: s.qr.amount, ot: s.qr.ot, failed: false } : null
+    case 'qr': return s?.qr ? { k: 'qr', amount: s.qr.amount, ot: s.qr.ot, failed: false, shownAt: s.qr.shownAt } : null
     case 'chain': return { k: 'chain' }
     case 'deposit': return s?.deposit ? { k: 'deposit', d: s.deposit } : null
     case 'paid': return s?.paid ? { k: 'paid', paid: s.paid } : null
@@ -114,7 +114,7 @@ export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
       currency,
       amount,
       note,
-      ...(screen.k === 'qr' && { qr: screen.ot ? { amount: screen.amount, ot: screen.ot } : undefined }),
+      ...(screen.k === 'qr' && { qr: screen.ot ? { amount: screen.amount, ot: screen.ot, shownAt: screen.shownAt } : undefined }),
       ...(screen.k === 'deposit' && { deposit: screen.d }),
       // a paid flow drops its address, so Back can't reopen a step that would report "paid" again
       ...(screen.k === 'paid' && { paid: screen.paid, qr: undefined, deposit: undefined }),
@@ -126,17 +126,19 @@ export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
 
   function showQr(reuse?: OneTime) {
     const amt = currency === 'BCH' ? n : 0
-    if (reuse) return show({ k: 'qr', amount: amt, ot: reuse, failed: false })
+    const shownAt = Date.now()
+    if (reuse) return show({ k: 'qr', amount: amt, ot: reuse, failed: false, shownAt })
     const alive = begin()
-    show({ k: 'qr', amount: amt, ot: null, failed: false })
+    show({ k: 'qr', amount: amt, ot: null, failed: false, shownAt })
     preparePayment(profile).then(
-      (ot) => alive() && setScreen({ k: 'qr', amount: amt, ot, failed: false }),
-      () => alive() && setScreen({ k: 'qr', amount: amt, ot: null, failed: true }),
+      (ot) => alive() && setScreen({ k: 'qr', amount: amt, ot, failed: false, shownAt }),
+      () => alive() && setScreen({ k: 'qr', amount: amt, ot: null, failed: true, shownAt }),
     )
   }
 
   async function payWallet() {
     const alive = begin()
+    const started = Date.now()
     const base = { k: 'wallet' as const, amount: n, currency }
     show({ ...base, ot: null, error: null })
     let ot: OneTime
@@ -151,7 +153,9 @@ export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
     try {
       const txid = await payWithWallet({ to: ot.address, tokenTo: ot.tokenAddress, ephemeralPub: ot.ephemeralPub, viewTag: ot.viewTag, currency, amount: n, note: note.trim() || undefined })
       if (!alive()) return
-      show({ k: 'paid', paid: { amount: fmtCoin(n, currency === 'BCH' ? 8 : 2), currency, address: currency === 'PUSD' ? ot.tokenAddress : ot.address, txid } }, true)
+      const at = Date.now()
+      const usd = currency === 'PUSD' ? n : price ? n * price : undefined
+      show({ k: 'paid', paid: { amount: fmtCoin(n, currency === 'BCH' ? 8 : 2), currency, address: currency === 'PUSD' ? ot.tokenAddress : ot.address, txid, usd, at, took: at - started } }, true)
     } catch (e) {
       if (!alive()) return
       const msg = e instanceof Error && e.message ? e.message : 'The wallet did not send the payment.'
@@ -172,7 +176,9 @@ export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
           onBack={back}
           onPaid={(utxos) => {
             const sats = utxos.reduce((s, u) => s + u.value, 0)
-            show({ k: 'paid', paid: { amount: fmtCoin(sats ? satsToBch(sats) : screen.amount), currency: 'BCH', address: screen.ot?.address ?? '', txid: utxos[0]?.tx_hash } }, true)
+            const bch = sats ? satsToBch(sats) : screen.amount
+            const at = Date.now()
+            show({ k: 'paid', paid: { amount: fmtCoin(bch), currency: 'BCH', address: screen.ot?.address ?? '', txid: utxos[0]?.tx_hash, usd: price ? bch * price : undefined, at, took: screen.shownAt ? at - screen.shownAt : undefined } }, true)
           }}
         />
       )
