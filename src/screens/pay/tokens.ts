@@ -48,11 +48,20 @@ const rank = (s: string) => {
   return i < 0 ? ORDER.length : i
 }
 
+// Payers pick from well-known assets only; NEAR Intents also lists memecoins and vault tokens that would confuse them.
+const LISTED = new Set([
+  'USDC', 'USDT', 'USDT0', 'DAI', 'XDAI', 'ETH', 'WETH', 'BTC', 'WBTC', 'CBBTC', 'SOL', 'BNB', 'TRX', 'POL', 'AVAX', 'ARB', 'OP',
+  'NEAR', 'WNEAR', 'XRP', 'DOGE', 'LTC', 'ZEC', 'DASH', 'TON', 'SUI', 'APT', 'ADA', 'XLM', 'BERA', 'MON', 'GNO', 'STRK', 'HYPE',
+  'ALEO', 'FOGO', 'XPL', 'MOVE', 'OKB', 'ADI', 'LINK', 'UNI', 'AAVE',
+])
+const symKey = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '')
+
 export function groupByChain(tokens: XToken[]): Map<string, XToken[]> {
   const m = new Map<string, XToken[]>()
   for (const t of tokens) {
-    if (t.blockchain === 'bch' || /deprecated/i.test(t.symbol)) continue
+    if (t.blockchain === 'bch' || /deprecated/i.test(t.symbol) || !LISTED.has(symKey(t.symbol))) continue
     const list = m.get(t.blockchain) ?? []
+    if (list.some((x) => symKey(x.symbol) === symKey(t.symbol))) continue
     list.push(t)
     m.set(t.blockchain, list)
   }
