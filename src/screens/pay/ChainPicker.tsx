@@ -1,16 +1,19 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Search } from 'lucide-react'
 import type { XToken } from '../../lib/api'
-import type { ChainId } from '../../data'
-import { ChainIcon, Modal } from '../../ui'
+import { Modal } from '../../ui'
 import { chainName, MAIN_CHAINS } from './tokens'
 
-const ICON: Record<string, ChainId> = { base: 'base', eth: 'ethereum', arb: 'arbitrum', sol: 'solana', tron: 'tron' }
+const ChainLogo = lazy(() => import('./xicons').then((m) => ({ default: m.ChainLogo })))
+const TokenLogo = lazy(() => import('./xicons').then((m) => ({ default: m.TokenLogo })))
+const Blank = ({ size }: { size: number }) => <span className="pay-chain-letter" style={{ width: size, height: size }} aria-hidden />
 
 function ChainMark({ id, size = 20 }: { id: string; size?: number }) {
-  const icon = ICON[id]
-  if (icon) return <ChainIcon chain={icon} size={size} />
-  return <span className="pay-chain-letter" style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden>{chainName(id)[0]}</span>
+  return <Suspense fallback={<Blank size={size} />}><ChainLogo id={id} size={size} /></Suspense>
+}
+
+function TokenMark({ symbol, size = 18 }: { symbol: string; size?: number }) {
+  return <Suspense fallback={<Blank size={size} />}><TokenLogo symbol={symbol} size={size} /></Suspense>
 }
 
 type Props = { groups: Map<string, XToken[]>; chain: string; onChain: (id: string) => void }
@@ -79,7 +82,7 @@ export function TokenPicker({ tokens, token, onToken }: { tokens: XToken[]; toke
   return (
     <div className="pay-chips left" role="group" aria-label="Token">
       {shown.map((t) => (
-        <button key={t.assetId} type="button" className={`btn sm ${t.assetId === token ? 'btn-tint' : 'btn-secondary'}`} aria-pressed={t.assetId === token} onClick={() => onToken(t.assetId)}>{t.symbol}</button>
+        <button key={t.assetId} type="button" className={`btn sm pay-chip ${t.assetId === token ? 'btn-tint' : 'btn-secondary'}`} aria-pressed={t.assetId === token} onClick={() => onToken(t.assetId)}><TokenMark symbol={t.symbol} />{t.symbol}</button>
       ))}
       {hidden > 0 && <button type="button" className="btn sm btn-secondary" onClick={() => setAll(true)}>+{hidden} more</button>}
     </div>
