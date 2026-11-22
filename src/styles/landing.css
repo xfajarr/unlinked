@@ -10,5 +10,3 @@
 .blaze-modal-p { margin: 0 0 18px; color: var(--ink-11); font-size: 15px; line-height: 1.5; }
 .blaze-modal-qr { margin: 0 auto 18px; max-width: 300px; }
 .blaze-modal-addr .url { font-size: 13px; }
-/* border-radius + overflow doesn't clip the scaled iframe in Chrome; clip-path does */
-.ld-phone-screen { clip-path: inset(0 round 43px); }
