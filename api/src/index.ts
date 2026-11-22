@@ -1,6 +1,6 @@
 // Unlinked API: a standalone Worker + D1. The server only ever sees public keys and handle-less announcements,
 // so nothing here can link a payment to a person. The frontend (repo root) calls it through src/lib/api.ts.
-type Env = { DB: D1Database }
+type Env = { DB: D1Database; ONECLICK_JWT?: string }
 
 // BN254 scalar field (shield spec section 3): a shieldPk must be below it
 const R = 21888242871839275222246405745257275088548364400416034343698204186575808495617n
@@ -40,6 +40,8 @@ const toAnn = (r: AnnRow, hideNote = false) => ({
 
 // NEAR Intents 1Click proxy. Stores nothing.
 const ONECLICK = 'https://1click.chaindefuser.com/v0'
+// a partner JWT (wrangler secret ONECLICK_JWT) drops the 0.25% unauthenticated platform fee
+const ocHeaders = (env: Env): Record<string, string> => ({ 'content-type': 'application/json', ...(env.ONECLICK_JWT ? { 'X-API-Key': env.ONECLICK_JWT } : {}) })
 const BCH_ASSET = 'nep141:bch.omft.near'
 
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' }
@@ -114,7 +116,7 @@ async function route(req: Request, env: Env): Promise<Response> {
     }
 
     case 'GET /api/xchain/tokens': {
-      const r = await fetch(`${ONECLICK}/tokens`)
+      const r = await fetch(`${ONECLICK}/tokens`, { headers: ocHeaders(env) })
       if (!r.ok) return json({ error: 'Could not load chains' }, 502)
       const all = (await r.json()) as Record<string, unknown>[]
       return json(all.map(({ assetId, symbol, blockchain, decimals, price }) => ({ assetId, symbol, blockchain, decimals, price })))
@@ -137,13 +139,16 @@ async function route(req: Request, env: Env): Promise<Response> {
         recipient: str(body.recipient, 120),
         recipientType: 'DESTINATION_CHAIN',
         deadline,
+        referral: 'unlinked',
       }
-      const r = await fetch(`${ONECLICK}/quote`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req1c) })
+      const r = await fetch(`${ONECLICK}/quote`, { method: 'POST', headers: ocHeaders(env), body: JSON.stringify(req1c) })
       const j = (await r.json().catch(() => ({}))) as { quote?: Record<string, unknown>; message?: string }
       if (!r.ok || !j.quote) return json({ error: j.message ? `Quote failed: ${j.message}` : 'Quote failed. Try again.' })
       const x = j.quote
       return json({
         depositAddress: String(x.depositAddress ?? ''),
+        // some chains (Stellar, for one) only match a deposit that carries this memo
+        ...(x.depositMemo ? { depositMemo: String(x.depositMemo) } : {}),
         amountIn: String(x.amountInFormatted ?? ''),
         amountOut: String(x.amountOutFormatted ?? ''),
         amountOutUsd: String(x.amountOutUsd ?? ''),
@@ -158,14 +163,15 @@ async function route(req: Request, env: Env): Promise<Response> {
       const txHash = field(body.txHash)
       const depositAddress = field(body.depositAddress)
       if (!txHash || !depositAddress) return json({ error: 'Enter a transaction hash.' }, 400)
-      const r = await fetch(`${ONECLICK}/deposit/submit`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ txHash, depositAddress }) })
+      const r = await fetch(`${ONECLICK}/deposit/submit`, { method: 'POST', headers: ocHeaders(env), body: JSON.stringify({ txHash, depositAddress }) })
       const j = (await r.json().catch(() => ({}))) as { status?: string; message?: string }
       if (!r.ok) return json({ error: r.status < 500 && j.message ? j.message : "Couldn't send it. Check the hash and try again." }, 502)
       return json({ ok: true, status: j.status ?? 'UNKNOWN' })
     }
 
     case 'GET /api/xchain/status': {
-      const r = await fetch(`${ONECLICK}/status?depositAddress=${encodeURIComponent(str(q.get('depositAddress'), 120))}`)
+      const memo = str(q.get('depositMemo'), 120)
+      const r = await fetch(`${ONECLICK}/status?depositAddress=${encodeURIComponent(str(q.get('depositAddress'), 120))}${memo ? `&depositMemo=${encodeURIComponent(memo)}` : ''}`, { headers: ocHeaders(env) })
       if (!r.ok) return json('UNKNOWN')
       const j = (await r.json()) as { status?: string }
       return json(j.status ?? 'UNKNOWN')

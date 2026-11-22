@@ -13,7 +13,7 @@ export type Profile = {
 }
 export type Announcement = { id: number; ephemeralPub: string; viewTag: number; noteCiphertext: string | null; createdAt: number }
 export type XToken = { assetId: string; symbol: string; blockchain: string; decimals: number; price: number }
-export type XQuote = { depositAddress: string; amountIn: string; amountOut: string; amountOutUsd: string; timeEstimate: number; deadline: string }
+export type XQuote = { depositAddress: string; depositMemo?: string; amountIn: string; amountOut: string; amountOutUsd: string; timeEstimate: number; deadline: string }
 export type XStatus = 'PENDING_DEPOSIT' | 'KNOWN_DEPOSIT_TX' | 'PROCESSING' | 'SUCCESS' | 'INCOMPLETE_DEPOSIT' | 'REFUNDED' | 'FAILED' | 'UNKNOWN'
 
 export const BCH_ASSET = 'nep141:bch.omft.near'
@@ -42,5 +42,6 @@ export const recentAnnouncements = () => call<Announcement[]>('/api/announcement
 export const xchainTokens = () => call<XToken[]>('/api/xchain/tokens')
 export const xchainQuote = ({ data }: { data: { originAsset: string; destinationAsset?: string; amount: string; recipient: string; refundTo: string; dry?: boolean } }) =>
   call<XQuote | { error: string }>('/api/xchain/quote', { body: data })
-export const xchainStatus = ({ data }: { data: { depositAddress: string } }) => call<XStatus>('/api/xchain/status', { query: data })
+export const xchainStatus = ({ data }: { data: { depositAddress: string; depositMemo?: string } }) =>
+  call<XStatus>('/api/xchain/status', { query: { depositAddress: data.depositAddress, ...(data.depositMemo ? { depositMemo: data.depositMemo } : {}) } })
 export const xchainSubmit = ({ data }: { data: { txHash: string; depositAddress: string } }) => call<{ ok: true; status: XStatus }>('/api/xchain/submit', { body: data })
