@@ -211,8 +211,8 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
       setFilling(null)
     }
   }
-  const bchFill = <button type="button" className="br-mini" disabled={!!filling} onClick={fillBch}>{filling === 'bch' ? 'Connecting…' : 'Use my BCH wallet'}</button>
-  const evmFill = EVM_CHAIN_ID[chain] && hasInjected() ? <button type="button" className="br-mini" disabled={!!filling} onClick={fillEvm}>{filling === 'evm' ? 'Connecting…' : 'Use my wallet'}</button> : null
+  const bchFill = <button type="button" className="br-mini" disabled={!!filling} onClick={fillBch}>{filling === 'bch' ? 'Connecting…' : 'Use wallet'}</button>
+  const evmFill = EVM_CHAIN_ID[chain] && hasInjected() ? <button type="button" className="br-mini" disabled={!!filling} onClick={fillEvm}>{filling === 'evm' ? 'Connecting…' : 'Use wallet'}</button> : null
 
   const start = async () => {
     if (!token) return
@@ -296,13 +296,13 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
       <div className="br-fields">
         {dir === 'in' ? (
           <>
-            <Field label={`Receive ${A.id} at (Bitcoin Cash)`} action={bchFill} value={bch} onChange={setBch} placeholder={A.category ? 'bitcoincash:z…' : 'bitcoincash:q…'}
+            <Field label={`Receive ${A.id} on Bitcoin Cash`} action={bchFill} value={bch} onChange={setBch} placeholder={A.category ? 'bitcoincash:z…' : 'bitcoincash:q…'}
               hint={bchInfo && !bchInfo.ok ? "That doesn't look like a Bitcoin Cash address." : needsZ && bchInfo?.ok && !bchInfo.tokens ? `${A.id} is a CashToken. Use your token address, it starts with bitcoincash:z.` : null} />
             <Field label={`Refund address on ${chainName(chain)}`} action={evmFill} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
           </>
         ) : (
           <>
-            <Field label={`Receive ${token.symbol} at (${chainName(chain)})`} action={evmFill} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
+            <Field label={`Receive ${token.symbol} on ${chainName(chain)}`} action={evmFill} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
             <Field label="Refund address on Bitcoin Cash" action={bchFill} value={bch} onChange={setBch} placeholder="bitcoincash:q…" hint={bchInfo && !bchInfo.ok ? "That doesn't look like a Bitcoin Cash address." : null} />
           </>
         )}
@@ -373,11 +373,11 @@ function Field({ label, action, value, onChange, placeholder, hint }: { label: s
   const id = useId()
   return (
     <div className="pay-field">
-      <div className="br-label-row">
-        <label className="pay-label" htmlFor={id}>{label}</label>
+      <label className="pay-label" htmlFor={id}>{label}</label>
+      <div className={`br-input${action ? ' has-action' : ''}`}>
+        <input id={id} className="field mono pay-refund" spellCheck={false} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
         {action}
       </div>
-      <input id={id} className="field mono pay-refund" spellCheck={false} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
       {hint && <span className="help">{hint}</span>}
     </div>
   )
