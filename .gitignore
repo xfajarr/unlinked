@@ -35,3 +35,4 @@ dist-chipnet
 shield/contracts/build/*.plan*.json
 shield/contracts/build/*.dry*.json
 shield/contracts/standin/build/*.log
+shield/contracts/build/*-live.build.json
