@@ -3,6 +3,8 @@ import { ArrowRight, ArrowUpRight, Check, EyeOff, History, KeyRound, Link2, Plus
 import { CHAINS, type ChainId, type TokenId } from '../data'
 import { Avatar, ChainIcon, TokenIcon } from '../ui'
 import { go, useStore } from '../App'
+import { DECK_URL, DONATION_ADDRESS, REPO_URL } from '../lib/config'
+import '../styles/landing.css'
 
 function Sparkle({ className }: { className: string }) {
   return (
@@ -26,7 +28,6 @@ function Chars({ text, from = 0 }: { text: string; from?: number }) {
   )
 }
 
-// raw address in, private payment out (the conveyor in the privacy section)
 const BELT = [
   { addr: 'bitcoincash:qz7x8m…4kfa', handle: 'rina', avatar: '/avatars/rina.jpg', note: 'Logo design', amt: '+0.0524' },
   { addr: 'bitcoincash:qr9a2c…1mzt', handle: 'budi_design', avatar: '/avatars/budi_design.jpg', note: 'Brand kit', amt: '+0.1306' },
@@ -36,14 +37,12 @@ const BELT = [
   { addr: 'bitcoincash:qrm81x…3pla', handle: 'andre', avatar: '', note: 'Website copy', amt: '+0.2815' },
 ]
 
-// second row of cards under the showcase
 const MORE = [
   { icon: Repeat, title: 'Any token, any chain', body: 'Payers send USDC, USDT, ETH, SOL or BCH. It arrives as BCH, swapped through NEAR Intents.' },
   { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with your PIN and backed up with 12 words. We never hold your money.' },
   { icon: Zap, title: 'Fast and cheap', body: 'Bitcoin Cash settles in seconds for a fraction of a cent.' },
 ]
 
-/** Cards drop one slot every tick: three raw addresses above the bar, three private @links below it. */
 function Belt() {
   const [t, setT] = useState(6)
   useEffect(() => {
@@ -59,7 +58,6 @@ function Belt() {
     cards.push(
       <div key={k} className={`ld-belt-card${done ? ' done' : ''}${slot === 3 ? ' fresh' : ''}${slot === 6 ? ' out' : ''}${slot === 0 ? ' in' : ''}`} style={{ ['--slot' as string]: Math.min(slot, 6) }}>
         <span className={`ld-belt-mark${done ? ' on' : ''}`}><Check size={14} strokeWidth={3.2} /></span>
-        {/* both faces are rendered; they cross-fade as the card passes the bar */}
         <div className="ld-belt-main">
           <div className="ld-belt-face raw">
             <div className="ld-belt-t mono">{item.addr}</div>
@@ -82,7 +80,6 @@ function Belt() {
   )
 }
 
-/** iPhone mockup showing a real app screen (the app in ?embed=1 mode). Decorative. */
 function Phone({ route, className = '' }: { route: string; className?: string }) {
   return (
     <div className={`ld-phone ${className}`} aria-hidden>
@@ -104,7 +101,6 @@ const STEPS = [
   { title: 'Get paid privately', body: 'Every payment lands in a fresh BCH address that only you can find. Nobody can tie them together.' },
 ]
 
-// one card per phone in the showcase, in the same order
 const SHOWCASE = [
   { route: '/withdraw', side: 'left', icon: ArrowUpRight, title: 'Withdraw anytime', body: 'Move your BCH to Paytaca, Cashonize or any wallet you like, whenever you want.' },
   { route: '/dashboard', side: 'mid', icon: EyeOff, title: 'One private balance', body: 'Every token you’re paid in adds up as BCH, at addresses only you can find.' },
@@ -120,12 +116,28 @@ const FAQ = [
   { q: 'How fast does money arrive?', a: 'BCH payments land in seconds. Payments from other chains wait for the swap, which usually takes a few minutes.' },
 ]
 
+function BlazeBanner() {
+  const [copied, setCopied] = useState(false)
+  const copy = () => navigator.clipboard?.writeText(DONATION_ADDRESS).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1400) }, () => {})
+  return (
+    <div className="blaze-banner" role="region" aria-label="BCH BLAZE 2026">
+      <span className="blaze-tag">BCH BLAZE 2026 entry</span>
+      <a href={DECK_URL} target="_blank" rel="noopener">Pitch deck<ArrowUpRight size={14} /></a>
+      <a href={REPO_URL} target="_blank" rel="noopener">Source code<ArrowUpRight size={14} /></a>
+      <button className="blaze-addr" onClick={copy} title="Copy CashTokens address">
+        <span>Support us (CashTokens)</span>
+        <code>{DONATION_ADDRESS}</code>
+        {copied ? <Check size={14} /> : null}
+      </button>
+    </div>
+  )
+}
+
 export default function Landing() {
   const { user } = useStore()
   const [open, setOpen] = useState<number | null>(0)
   const start = () => go(user ? '/dashboard' : '/onboarding')
   const root = useRef<HTMLDivElement>(null)
-  // nav shrinks into a floating glass pill once you leave the top
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 24)
@@ -158,7 +170,6 @@ export default function Landing() {
       window.addEventListener('scroll', onScroll, { passive: true })
       window.addEventListener('resize', onScroll)
     }
-    // reveal sections as they come into view
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target) }
     }, { rootMargin: '0px 0px -12% 0px' })
@@ -175,6 +186,7 @@ export default function Landing() {
 
   return (
     <div className="ld" ref={root}>
+      <BlazeBanner />
       <header className={`ld-nav${scrolled ? ' scrolled' : ''}`}>
         <div className="ld-nav-in">
         <a className="logo" href="#/landing" style={{ textDecoration: 'none', color: 'inherit' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
@@ -189,7 +201,6 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* hero: centred copy, the app on an iPhone rising out of the panel, floating cards around it */}
       <section className="ld-hero2 px-scope">
         <div className="scene" aria-hidden>
           <img className="scene-ribbon" src="/art/ribbon.webp" alt="" />
@@ -225,7 +236,6 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* floating cards (decorative) */}
           <div className="ld-float f1" aria-hidden>
             <div className="ld-f-label">Just now</div>
             <div className="ld-f-row">
@@ -257,7 +267,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* chains strip */}
       <section className="ld-strip2 reveal" aria-label="Supported chains">
         <span className="ld-strip-label">Payers can send from</span>
         <div className="ld-strip-row">
@@ -267,13 +276,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* showcase: three real app screens, then what you get */}
       <section className="ld-section reveal">
         <div className="ld-head">
           <h2 className="ld-h2 st" aria-label="Everything you need to get paid privately"><Chars text="Everything you need to get paid privately" /></h2>
           <p className="ld-sub">Claim a name, share one link, watch payments arrive. All from your browser.</p>
         </div>
-        {/* one frame: phones on top, each with its card underneath */}
         <div className="frame ld-show-frame px-scope">
           <div className="ld-showcase">
             <Sparkle className="spark s1" />
@@ -297,13 +304,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* how it works */}
       <section className="ld-section reveal" id="how">
         <div className="ld-head">
           <h2 className="ld-h2 st" aria-label="Three steps to private payments"><Chars text="Three steps to private payments" /></h2>
           <p className="ld-sub">Set up in a minute. No wallet to install, no address to copy around.</p>
         </div>
-        {/* timeline: a small picture of each step, numbered and joined by a line */}
         <div className="ld-steps2">
           {STEPS.map(({ title, body }, i) => (
             <div key={title} className="ld-step2">
@@ -335,7 +340,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* privacy: raw addresses flow down through the Unlinked bar and come out as private @links */}
       <section className="ld-section reveal" id="privacy">
         <div className="ld-belt-wrap">
           <div className="ld-belt-copy">
@@ -346,7 +350,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* faq: heading + help card on the left, accordion on the right */}
       <section className="ld-section ld-faq-sec reveal" id="faq">
         <div className="ld-faq-side">
           <h2 className="ld-h2 st" aria-label="Questions, answered"><Chars text="Questions, answered" /></h2>
@@ -366,7 +369,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* footer: full-width blue band, CTA in the middle, brand / links / credit along the bottom */}
       <footer className="ld-final ld-footer px-scope reveal">
         <div className="scene" aria-hidden>
           <img className="scene-globe" src="/art/globe.webp" alt="" />
