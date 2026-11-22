@@ -16,7 +16,7 @@ export function PaymentRow({ p, onOpen }: { p: Payment; onOpen: (p: Payment) => 
         <span className="out-ico"><ArrowUpRight size={22} strokeWidth={2.2} /></span>
         <div className="row-main">
           <div className="row-title">{p.note}</div>
-          <div className="row-meta">{p.out.txs > 1 ? `${p.out.txs} separate payments` : 'One payment'} · {ago(p.minutesAgo)}</div>
+          <div className="row-meta">{p.out.txs > 1 ? `${p.out.txs} separate payments` : 'One payment'}, {ago(p.minutesAgo)}</div>
         </div>
         <div className="row-end">
           <div className="row-amt">−{fmtBch(Math.abs(p.bch))}</div>
@@ -30,7 +30,7 @@ export function PaymentRow({ p, onOpen }: { p: Payment; onOpen: (p: Payment) => 
       <TokenIcon token={p.token} chain={p.chain} size={46} />
       <div className="row-main">
         <div className="row-title">{p.note ?? 'Payment received'}</div>
-        <div className="row-meta">{p.amountIn} {p.token} on {CHAINS[p.chain].name} · {ago(p.minutesAgo)}</div>
+        <div className="row-meta">{p.amountIn} {p.token} on {CHAINS[p.chain].name}, {ago(p.minutesAgo)}</div>
       </div>
       <div className="row-end">
         <div className="row-amt" style={{ color: 'var(--green-11)' }}>+{fmtBch(p.bch)}</div>
@@ -47,7 +47,7 @@ export function PaymentModal({ p, onClose }: { p: Payment; onClose: () => void }
         <div className="center" style={{ marginBottom: 24 }}>
           <span className="out-ico" style={{ width: 64, height: 64, margin: '0 auto' }}><ArrowUpRight size={30} strokeWidth={2.2} /></span>
           <div className="hero-num" style={{ fontSize: 40, lineHeight: '48px', marginTop: 12 }}>−{fmtBch(Math.abs(p.bch))}</div>
-          <div className="muted">BCH · {ago(p.minutesAgo)}</div>
+          <div className="muted">BCH, {ago(p.minutesAgo)}</div>
         </div>
         <div className="rows">
           <div className="row"><span className="row-main muted">To</span><span>{p.out.to}</span></div>
@@ -63,7 +63,7 @@ export function PaymentModal({ p, onClose }: { p: Payment; onClose: () => void }
       <div className="center" style={{ marginBottom: 24 }}>
         <div style={{ display: 'inline-block' }}><TokenIcon token={p.token} chain={p.chain} size={64} /></div>
         <div className="hero-num" style={{ fontSize: 40, lineHeight: '48px', marginTop: 12 }}>+{fmtBch(p.bch)}</div>
-        <div className="muted">BCH · {ago(p.minutesAgo)}</div>
+        <div className="muted">BCH, {ago(p.minutesAgo)}</div>
       </div>
       <div className="rows">
         <div className="row"><span className="row-main muted">They sent</span><span>{p.amountIn} {p.token} on {CHAINS[p.chain].name}</span></div>

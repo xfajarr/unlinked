@@ -26,7 +26,7 @@ export const useStore = () => useContext(Ctx)
 
 // ?embed=1 renders the app as a showcase (landing page phone): fixed demo user and demo data, nothing saved
 export const EMBED = new URLSearchParams(window.location.search).has('embed')
-const EMBED_USER: User = { handle: 'rina' }
+const EMBED_USER: User = { handle: 'ava' }
 if (EMBED) document.documentElement.classList.add('embed')
 
 function useHash() {

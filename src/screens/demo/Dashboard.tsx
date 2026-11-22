@@ -10,8 +10,8 @@ function CopyHandle({ handle }: { handle: string }) {
   const [ok, setOk] = useState(false)
   useEffect(() => { if (!ok) return; const t = setTimeout(() => setOk(false), 1400); return () => clearTimeout(t) }, [ok])
   return (
-    <button className="handle-link" onClick={() => { setOk(true); navigator.clipboard?.writeText(`https://unlinked.cash/@${handle}`).catch(() => setOk(false)) }}>
-      unlinked.cash/@{handle}{ok ? <Check size={14} strokeWidth={2.6} /> : <Copy size={13} />}
+    <button className="handle-link" onClick={() => { setOk(true); navigator.clipboard?.writeText(`${location.origin}/@${handle}`).catch(() => setOk(false)) }}>
+      {location.host}/@{handle}{ok ? <Check size={14} strokeWidth={2.6} /> : <Copy size={13} />}
     </button>
   )
 }
@@ -68,7 +68,7 @@ export default function Dashboard() {
           <div className="bc-figure">
             <div className="hero-num bc-num"><RollingNumber value={`${w}.${f}`} /><small> BCH</small></div>
             <div className="bc-sub tnum">
-              ≈ {fmtUsd(total * BCH_USD)} · <span style={{ color: 'var(--green-11)' }}>+{fmtBch(gained)} past month</span>
+              ≈ {fmtUsd(total * BCH_USD)}, <span style={{ color: 'var(--green-11)' }}>+{fmtBch(gained)} past month</span>
             </div>
           </div>
 

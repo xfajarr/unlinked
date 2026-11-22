@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ArrowUpRight, Check, EyeOff, History, KeyRound, Link2, Plus, QrCode, Repeat, Unlink, Zap } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, EyeOff, History, KeyRound, Link2, Plus, QrCode, Repeat, ShieldCheck, Unlink } from 'lucide-react'
 import { CHAINS, type ChainId, type TokenId } from '../data'
 import { Avatar, ChainIcon, TokenIcon } from '../ui'
 import { go, useStore } from '../App'
-import { DECK_URL, DONATION_ADDRESS, REPO_URL } from '../lib/config'
+import { DECK_URL, DEMO_HANDLE, DONATION_ADDRESS, REPO_URL } from '../lib/config'
 import '../styles/landing.css'
 
 function Sparkle({ className }: { className: string }) {
@@ -29,18 +29,18 @@ function Chars({ text, from = 0 }: { text: string; from?: number }) {
 }
 
 const BELT = [
-  { addr: 'bitcoincash:qz7x8m…4kfa', handle: 'rina', avatar: '/avatars/rina.jpg', note: 'Logo design', amt: '+0.0524' },
-  { addr: 'bitcoincash:qr9a2c…1mzt', handle: 'budi_design', avatar: '/avatars/budi_design.jpg', note: 'Brand kit', amt: '+0.1306' },
-  { addr: 'bitcoincash:qp3nd7…8c2d', handle: 'kopikenangan', avatar: '/avatars/kopikenangan.jpg', note: 'Coffee order', amt: '+0.0120' },
-  { addr: 'bitcoincash:qq5ev0…7hyx', handle: 'dimas', avatar: '', note: 'Consulting call', amt: '+0.6309' },
-  { addr: 'bitcoincash:qz2kf1…0vwe', handle: 'sari', avatar: '', note: 'Poster design', amt: '+0.5063' },
-  { addr: 'bitcoincash:qrm81x…3pla', handle: 'andre', avatar: '', note: 'Website copy', amt: '+0.2815' },
+  { addr: 'bitcoincash:qz7x8m…4kfa', handle: 'ava', note: 'Logo design', amt: '+0.0524' },
+  { addr: 'bitcoincash:qr9a2c…1mzt', handle: 'noah_design', note: 'Brand kit', amt: '+0.1306' },
+  { addr: 'bitcoincash:qp3nd7…8c2d', handle: 'cornercafe', note: 'Coffee order', amt: '+0.0120' },
+  { addr: 'bitcoincash:qq5ev0…7hyx', handle: 'leo', note: 'Consulting call', amt: '+0.6309' },
+  { addr: 'bitcoincash:qz2kf1…0vwe', handle: 'mia', note: 'Poster design', amt: '+0.5063' },
+  { addr: 'bitcoincash:qrm81x…3pla', handle: 'sam_writes', note: 'Website copy', amt: '+0.2815' },
 ]
 
 const MORE = [
   { icon: Repeat, title: 'Any token, any chain', body: 'Payers send USDC, USDT, ETH, SOL or BCH. It arrives as BCH, swapped through NEAR Intents.' },
-  { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with your PIN and backed up with 12 words. We never hold your money.' },
-  { icon: Zap, title: 'Fast and cheap', body: 'Bitcoin Cash settles in seconds for a fraction of a cent.' },
+  { icon: ShieldCheck, title: 'Private by default', body: 'Each payment moves into Unlinked Shield, a zero-knowledge pool that Bitcoin Cash checks on-chain. Whoever paid you can’t follow where it goes next.' },
+  { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with your password and backed up with 12 words. We never hold your money.' },
 ]
 
 function Belt() {
@@ -64,11 +64,11 @@ function Belt() {
             <div className="ld-belt-s">Same address for every client</div>
           </div>
           <div className="ld-belt-face ok">
-            <div className="ld-belt-t">unlinked.cash/<b>@{item.handle}</b></div>
-            <div className="ld-belt-s tnum">{item.amt} BCH · private</div>
+            <div className="ld-belt-t">Pay link <b>@{item.handle}</b></div>
+            <div className="ld-belt-s tnum">{item.amt} BCH, kept private</div>
           </div>
         </div>
-        <span className="ld-belt-av"><Avatar handle={item.handle} size={36} src={item.avatar || undefined} /></span>
+        <span className="ld-belt-av"><Avatar handle={item.handle} size={36} /></span>
       </div>,
     )
   }
@@ -96,24 +96,25 @@ const TOKEN_LIST: TokenId[] = ['BCH', 'USDC', 'USDT', 'ETH', 'SOL']
 const CHAIN_LIST: ChainId[] = ['bch', 'ethereum', 'base', 'arbitrum', 'solana', 'tron']
 
 const STEPS = [
-  { title: 'Claim your @username', body: 'Pick a name and set a PIN. Your keys are made on your device, not on our servers.' },
-  { title: 'Share one link', body: 'Send unlinked.cash/@you or show the QR. Add an amount and a note when you want to.' },
-  { title: 'Get paid privately', body: 'Every payment lands in a fresh BCH address that only you can find. Nobody can tie them together.' },
+  { title: 'Claim your @username', body: 'Pick a name and a password. Your keys are made on your device, not on our servers.' },
+  { title: 'Share one link', body: 'Post your link or show the QR. Add an amount when you want a set price.' },
+  { title: 'Get paid privately', body: 'Every payment lands at a fresh BCH address only you can find, then moves into your private balance.' },
 ]
 
 const SHOWCASE = [
   { route: '/withdraw', side: 'left', icon: ArrowUpRight, title: 'Withdraw anytime', body: 'Move your BCH to Paytaca, Cashonize or any wallet you like, whenever you want.' },
-  { route: '/dashboard', side: 'mid', icon: EyeOff, title: 'One private balance', body: 'Every token you’re paid in adds up as BCH, at addresses only you can find.' },
-  { route: '/transactions', side: 'right', icon: History, title: 'Every payment, tracked', body: 'Search by note, filter by token and see what each payment was for.' },
+  { route: '/dashboard', side: 'mid', icon: EyeOff, title: 'One private balance', body: 'Whatever token you’re paid in, it adds up as BCH in one private balance.' },
+  { route: '/transactions', side: 'right', icon: History, title: 'Every payment in one list', body: 'See what came in, what you sent and what’s already private.' },
 ]
 
 const FAQ = [
-  { q: 'Who can see what I receive?', a: 'Only you. Each payment goes to a one-time address made from your keys. On the blockchain they look like unrelated addresses.' },
+  { q: 'Who can see what I receive?', a: 'Each payment goes to a one-time address made from your keys, so on the blockchain your payments look unrelated to each other and to you. Shield then moves them into our zero-knowledge pool, so the person who paid you can’t follow where the money goes next.' },
+  { q: 'What is Unlinked Shield?', a: 'Our own zero-knowledge pool on Bitcoin Cash. Payments are shielded automatically. Every send or withdraw from your private balance carries a Groth16 proof that BCH Script checks on-chain, and a transfer inside the pool hides the sender, the receiver and the amount.' },
   { q: 'Does the payer need a Bitcoin Cash wallet?', a: 'No. They can pay with stablecoins or other tokens from the wallet they already use. The swap to BCH happens on the way.' },
-  { q: 'What happens if a swap fails?', a: 'The payer’s tokens are refunded to a fresh address on their own chain. Nothing gets stuck in the middle.' },
-  { q: 'Is Unlinked custodial?', a: 'No. Your keys are created and stored on your device. If you lose it, your 12-word recovery phrase gets you back in.' },
+  { q: 'What happens if a swap fails?', a: 'NEAR Intents refunds the payer’s tokens to the refund address they entered, on their own chain.' },
+  { q: 'Is Unlinked custodial?', a: 'No. Your keys are created and stored on your device. If you lose it, your username and 12 words get you back in.' },
   { q: 'Which tokens can people pay with?', a: 'BCH, USDC, USDT, ETH and SOL across Bitcoin Cash, Ethereum, Base, Arbitrum, Solana and Tron. Everything arrives as BCH.' },
-  { q: 'How fast does money arrive?', a: 'BCH payments land in seconds. Payments from other chains wait for the swap, which usually takes a few minutes.' },
+  { q: 'What does it cost?', a: 'A plain BCH payment costs a fraction of a cent. Shielding costs about 32,000 sats (a few cents) per transaction, so payments under about 37,000 sats stay at their one-time address.' },
 ]
 
 function BlazeBanner() {
@@ -125,7 +126,7 @@ function BlazeBanner() {
       <a href={DECK_URL} target="_blank" rel="noopener">Pitch deck<ArrowUpRight size={14} /></a>
       <a href={REPO_URL} target="_blank" rel="noopener">Source code<ArrowUpRight size={14} /></a>
       <button className="blaze-addr" onClick={copy} title="Copy CashTokens address">
-        <span>Support us (CashTokens)</span>
+        <span>Vote with EMBER2026</span>
         <code>{DONATION_ADDRESS}</code>
         {copied ? <Check size={14} /> : null}
       </button>
@@ -216,12 +217,12 @@ export default function Landing() {
         </div>
 
         <div className="ld-hero2-copy px-copy">
-          <span className="ld-eyebrow glass"><span className="dot" />Live on Bitcoin Cash</span>
+          <span className="ld-eyebrow glass"><span className="dot" />Live on Bitcoin Cash mainnet</span>
           <h1 className="ld-h1 st" aria-label="Get paid from any chain. Stay unlinked."><Chars text="Get paid from any chain." /><br /><Chars text="Stay " from={24} /><span className="ld-pill"><Chars text="unlinked." from={28} /></span></h1>
           <p className="ld-lead">One link, any token. Every payment lands privately as BCH.</p>
           <div className="ld-ctas">
             <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
-            <button className="btn ld-btn-glass" onClick={() => go('/pay/rina')}>See a pay page</button>
+            {DEMO_HANDLE && <button className="btn ld-btn-glass" onClick={() => go(`/pay/${DEMO_HANDLE}`)}>See a pay page</button>}
           </div>
         </div>
 
@@ -315,20 +316,20 @@ export default function Landing() {
               <div className="ld-step2-vis" aria-hidden>
                 {i === 0 && (
                   <div className="ld-mini-field">
-                    <span className="ld-mini-at">@</span><span className="ld-mini-name">rina</span>
+                    <span className="ld-mini-at">@</span><span className="ld-mini-name">ava</span>
                     <span className="ld-mini-ok"><Check size={12} strokeWidth={3} />Available</span>
                   </div>
                 )}
                 {i === 1 && (
                   <div className="ld-mini-stack">
-                    <div className="ld-mini-link"><span><span className="dim">unlinked.cash/</span>@rina</span><span className="ld-mini-copy"><Link2 size={14} strokeWidth={2.4} /></span></div>
-                    <div className="ld-mini-chips"><span><QrCode size={13} strokeWidth={2.4} />QR code</span><span>$120 · Logo</span></div>
+                    <div className="ld-mini-link"><span>@ava</span><span className="ld-mini-copy"><Link2 size={14} strokeWidth={2.4} /></span></div>
+                    <div className="ld-mini-chips"><span><QrCode size={13} strokeWidth={2.4} />QR code</span><span>$120 for a logo</span></div>
                   </div>
                 )}
                 {i === 2 && (
                   <div className="ld-mini-pay">
                     <span className="ld-toast-ico"><Check size={14} strokeWidth={3} /></span>
-                    <div><div className="ld-mini-amt tnum">+0.0524 BCH</div><div className="ld-mini-sub">fresh address · just now</div></div>
+                    <div><div className="ld-mini-amt tnum">+0.0524 BCH</div><div className="ld-mini-sub">fresh address, just now</div></div>
                   </div>
                 )}
               </div>

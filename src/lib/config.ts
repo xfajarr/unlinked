@@ -3,6 +3,8 @@ export const REPO_URL = 'https://github.com/xfajarr/unlinked'
 export const DONATION_ADDRESS = 'bitcoincash:zREPLACE_WITH_CASHTOKENS_ADDRESS'
 
 export const APP_HOST = 'unlinked.cash'
+/** Handle the landing's "See a pay page" button opens; empty hides the button. */
+export const DEMO_HANDLE = ''
 export const PUSD_CATEGORY = '2469acc5afa4b10cb5b5c04afb89c3a3ffd61c5da9c01e26d00951cae2a02544'
 export const PUSD_DECIMALS = 2
 

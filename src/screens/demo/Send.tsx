@@ -5,7 +5,7 @@ import { Avatar, Modal, TickSlider, SuccessMark, ModalCancel, TokenIcon } from '
 import { go } from '../../App'
 
 const FEE_PER_TX = 0.0000025
-const RECENT = ['@rina', '@budi_design', '@kopikenangan']
+const RECENT = ['@ava', '@noah_design', '@cornercafe']
 const MY_WALLETS = [
   { name: 'Paytaca', addr: 'bitcoincash:qr6m7j9a4kq0f3w2hxy8u5c1zv0n4e7tlsd2k8p9gx' },
   { name: 'Cashonize', addr: 'bitcoincash:qz3e8t5w9yq2u7c0kx4h6j1mn8d5r2fpv0a7gle3s' },
@@ -57,7 +57,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
         {withdraw && <button className="orb" onClick={() => go('/dashboard')} aria-label="Back to home"><ArrowLeft size={22} strokeWidth={2.2} /></button>}
         <div>
           <h1 className="page-title">{withdraw ? 'Withdraw' : 'Send'}</h1>
-          <p className="page-sub tnum">{withdraw ? 'To your own wallet · ' : ''}{fmtBch(total)} BCH available</p>
+          <p className="page-sub tnum">{withdraw ? 'To your own wallet, ' : ''}{fmtBch(total)} BCH available</p>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
                 </button>
               )) : RECENT.map((h) => (
                 <button key={h} className="recent-chip" onClick={() => setTo(h)}>
-                  <Avatar handle={h.slice(1)} src={`/avatars/${h.slice(1)}.jpg`} size={26} />{h}
+                  <Avatar handle={h.slice(1)} size={26} />{h}
                 </button>
               ))}
             </div>
@@ -169,7 +169,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
                 <div className="muted tnum">≈ {fmtUsd(amount * BCH_USD)}</div>
               </div>
               <div className="rows">
-                <div className="row"><span className="row-main muted">To</span><span className={isHandle ? '' : 'mono'} style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isHandle ? t.toLowerCase() : saved ? `${saved.name} · ${shortAddr(saved.addr)}` : t}</span></div>
+                <div className="row"><span className="row-main muted">To</span><span className={isHandle ? '' : 'mono'} style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isHandle ? t.toLowerCase() : saved ? `${saved.name} (${shortAddr(saved.addr)})` : t}</span></div>
                 <div className="row"><span className="row-main muted">Sent as</span><span>{priv ? `${txs} separate payment${txs > 1 ? 's' : ''}` : 'One payment'}</span></div>
                 <div className="row"><span className="row-main muted">Network fee</span><span className="tnum">{fmtBch(fee, 7)} BCH</span></div>
               </div>

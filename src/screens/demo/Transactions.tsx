@@ -35,7 +35,7 @@ export default function Transactions() {
   const summary = q.trim()
     ? `${plural(filtered.length, 'result')} for “${q.trim()}”`
     : (sentCount
-        ? [recvCount && `${recvCount} received`, `${sentCount} sent`].filter(Boolean).join(' · ')
+        ? [recvCount && `${recvCount} received`, `${sentCount} sent`].filter(Boolean).join(', ')
         : recvCount ? `${plural(recvCount, 'payment')} received` : 'No payments') + (token === 'all' || !filtered.length ? '' : ` in ${token}`)
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE))
   const visible = filtered.slice(page * PAGE, page * PAGE + PAGE)
