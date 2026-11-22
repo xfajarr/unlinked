@@ -1,5 +1,5 @@
 
-const EVM = new Set(['base', 'eth', 'arb', 'bsc', 'op', 'pol', 'avax', 'gnosis', 'scroll', 'bera', 'monad', 'xlayer', 'abs', 'plasma', 'hood', 'hypercore'])
+export const EVM = new Set(['base', 'eth', 'arb', 'bsc', 'op', 'pol', 'avax', 'gnosis', 'scroll', 'bera', 'monad', 'xlayer', 'abs', 'plasma', 'hood', 'hypercore'])
 const B58 = '[1-9A-HJ-NP-Za-km-z]'
 const CHECKS: Record<string, RegExp> = {
   sol: new RegExp(`^${B58}{32,44}$`),

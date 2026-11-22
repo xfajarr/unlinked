@@ -7,6 +7,7 @@ import { Avatar, ChainIcon, CopyButton, Modal, TokenIcon } from '../ui'
 import { go, useStore } from '../App'
 import { DECK_URL, DEMO_HANDLE, DONATION_ADDRESS, REPO_URL } from '../lib/config'
 import '../styles/landing.css'
+import { SiteNav, takePendingSection } from './SiteNav'
 
 function Sparkle({ className }: { className: string }) {
   return (
@@ -153,12 +154,9 @@ export default function Landing() {
   const [open, setOpen] = useState<number | null>(0)
   const start = () => go(user ? '/dashboard' : '/onboarding')
   const root = useRef<HTMLDivElement>(null)
-  const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 24)
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
+    const id = takePendingSection()
+    if (id) setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
   }, [])
 
   // parallax: each .px-scope gets --p (-1 above centre … 1 below); layers move by their own factor in CSS
@@ -202,20 +200,7 @@ export default function Landing() {
   return (
     <div className="ld" ref={root}>
       <BlazeBanner />
-      <header className={`ld-nav${scrolled ? ' scrolled' : ''}`}>
-        <div className="ld-nav-in">
-        <a className="logo" href="/landing" style={{ textDecoration: 'none', color: 'inherit' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
-          <span className="logo-mark"><Unlink size={18} strokeWidth={2.4} /></span>unlinked
-        </a>
-        <nav className="ld-links" aria-label="Sections">
-          <button onClick={() => scrollTo('how')}>How it works</button>
-          <button onClick={() => scrollTo('privacy')}>Privacy</button>
-          <button onClick={() => scrollTo('faq')}>FAQ</button>
-          <button onClick={() => go('/bridge')}>PUSD bridge</button>
-        </nav>
-        <button className="btn btn-primary md" onClick={start}>{user ? 'Open app' : 'Get your link'}</button>
-        </div>
-      </header>
+      <SiteNav page="landing" />
 
       <section className="ld-hero2 px-scope">
         <div className="scene" aria-hidden>
@@ -405,7 +390,7 @@ export default function Landing() {
             <button onClick={() => scrollTo('how')}>How it works</button>
             <button onClick={() => scrollTo('privacy')}>Privacy</button>
             <button onClick={() => scrollTo('faq')}>FAQ</button>
-            <button onClick={() => go('/bridge')}>PUSD bridge</button>
+            <button onClick={() => go('/bridge')}>Bridge</button>
           </nav>
           <span className="ld-foot-credit">Built for BCH BLAZE 2026</span>
         </div>
