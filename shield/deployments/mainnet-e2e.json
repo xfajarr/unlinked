@@ -1,0 +1,137 @@
+{
+ "network": "mainnet",
+ "mode": "live",
+ "pool": "bitcoincash:pwtm4nmlq66z9sxftgrjnanhku97ctyfxhrnccf0eqqalymceqhk624p0ztws",
+ "genesisTxid": "560fb1eb7318f0695ee2a7aa96d2d1ee973c7b0292743c07a973e0e88526453c",
+ "steps": [
+  {
+   "name": "deposit",
+   "txid": "4f66907e464bde42ba8a266cb0b4b82e3b76f20ab3d435fadad5a5e309d50214",
+   "size": 31378,
+   "fee": "32006",
+   "satPerByte": 1.02,
+   "publicAmount": "200000",
+   "proveMs": 8859,
+   "inputs": [
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7079334,
+     "budget": 8032800,
+     "marginPct": 11.87
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7022683,
+     "budget": 8032800,
+     "marginPct": 12.57
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 6619138,
+     "budget": 8032800,
+     "marginPct": 17.6
+    },
+    {
+     "unlockingBytes": 778,
+     "opStandard": 82471,
+     "budget": 655200,
+     "marginPct": 87.41
+    },
+    {
+     "unlockingBytes": 100,
+     "opStandard": 28025,
+     "budget": 112800,
+     "marginPct": 75.16
+    }
+   ]
+  },
+  {
+   "name": "transfer",
+   "txid": "20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51",
+   "size": 31203,
+   "fee": "31828",
+   "satPerByte": 1.02,
+   "publicAmount": "-31828",
+   "proveMs": 12577,
+   "inputs": [
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7077929,
+     "budget": 8032800,
+     "marginPct": 11.89
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7041083,
+     "budget": 8032800,
+     "marginPct": 12.35
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 6710485,
+     "budget": 8032800,
+     "marginPct": 16.46
+    },
+    {
+     "unlockingBytes": 778,
+     "opStandard": 86430,
+     "budget": 655200,
+     "marginPct": 86.81
+    }
+   ]
+  },
+  {
+   "name": "withdraw",
+   "txid": "57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2",
+   "size": 31262,
+   "fee": "31888",
+   "satPerByte": 1.02,
+   "publicAmount": "-131888",
+   "proveMs": 9765,
+   "inputs": [
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7084697,
+     "budget": 8032800,
+     "marginPct": 11.8
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 7026711,
+     "budget": 8032800,
+     "marginPct": 12.52
+    },
+    {
+     "unlockingBytes": 10000,
+     "opStandard": 6611627,
+     "budget": 8032800,
+     "marginPct": 17.69
+    },
+    {
+     "unlockingBytes": 803,
+     "opStandard": 87968,
+     "budget": 675200,
+     "marginPct": 86.97
+    }
+   ]
+  }
+ ],
+ "final": {
+  "poolTxid": "57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2",
+  "poolValue": "37284",
+  "notes": [
+   {
+    "owner": "A",
+    "amount": "18172",
+    "leafIndex": 3
+   },
+   {
+    "owner": "B",
+    "amount": "18112",
+    "leafIndex": 4
+   }
+  ],
+  "syncedSteps": 3
+ },
+ "passed": true
+}
