@@ -36,3 +36,8 @@ shield/contracts/build/*.plan*.json
 shield/contracts/build/*.dry*.json
 shield/contracts/standin/build/*.log
 shield/contracts/build/*-live.build.json
+
+# Remotion demo video
+video/node_modules
+video/out
+public/demo.mp4

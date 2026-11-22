@@ -1,0 +1,76 @@
+{
+  "_sources": "Verified 2026-11-22 14:30-14:36 WIB via api.blockchair.com (BCH), bsc-dataseed.binance.org (BNB Chain RPC), 1click.chaindefuser.com/v0/status (NEAR Intents), api.nearblocks.io (NEAR), repo README.md + shield/circuits/NOTES.md",
+  "links": {
+    "app": "getunlinked.pages.dev",
+    "profile": "getunlinked.pages.dev/@xfajarr",
+    "repo": "github.com/xfajarr/unlinked",
+    "deck": "getunlinked.pages.dev/deck.pdf"
+  },
+  "wizardConnect": {
+    "txid": "06b28d53caebd13bb26a1ee6ef6c6d9fcb5ca40598385387c94410b0003b8ba1",
+    "sizeBytes": 272,
+    "feeSat": 307,
+    "seenUtc": "2026-11-22 07:23:59",
+    "seenWib": "14:23:59",
+    "inputSat": 512668,
+    "outputs": [
+      { "index": 0, "kind": "payment", "sat": 100000, "address": "bitcoincash:qrkt04gmc7j5aup7n988fndkkmj6rn8g8gp8z96500" },
+      { "index": 1, "kind": "announce", "sat": 0, "scriptHex": "6a04554e4c4b0100210373757a586277deb8b1e6253e272eb923e0ae3b634f71a5ea34f48473c93dcc6c018f", "ephemeralKey": "0373757a586277deb8b1e6253e272eb923e0ae3b634f71a5ea34f48473c93dcc6c", "viewTag": "8f", "format": "pushes: UNLK, version 0, ephemeral key E (33 B), view tag (1 B) per src/lib/stealth.ts" },
+      { "index": 2, "kind": "change", "sat": 412361, "address": "bitcoincash:qrw36fp7n54vyxdgcypae7dcnm0h8up7jy5h2drms7" }
+    ]
+  },
+  "shield": {
+    "pool": "bitcoincash:pwtm4nmlq66z9sxftgrjnanhku97ctyfxhrnccf0eqqalymceqhk624p0ztws",
+    "history": [
+      { "label": "Genesis", "txid": "560fb1eb7318f0695ee2a7aa96d2d1ee973c7b0292743c07a973e0e88526453c", "sizeBytes": 428, "feeSat": 450, "block": 978428, "poolBefore": 0, "poolAfter": 1000 },
+      { "label": "Deposit", "txid": "4f66907e464bde42ba8a266cb0b4b82e3b76f20ab3d435fadad5a5e309d50214", "sizeBytes": 31378, "feeSat": 32006, "block": 978428, "poolBefore": 1000, "poolAfter": 201000 },
+      { "label": "Private transfer", "txid": "20cbbbf2fd2479292831a60755196ef852c5f1df1ebc35e9aedc9f260faccc51", "sizeBytes": 31203, "feeSat": 31828, "block": 978428, "poolBefore": 201000, "poolAfter": 169172 },
+      { "label": "Withdraw", "txid": "57fb44fd370bdc08f5532d176f7cb307bcc0165c51d279044e5844bd897be5a2", "sizeBytes": 31262, "feeSat": 31888, "block": 978428, "poolBefore": 169172, "poolAfter": 37284 },
+      { "label": "Auto-shield", "txid": "7b94dcb882e5f0f542ed82488347f9df8e39c01e2b70257b3d1f3e399910c5a7", "sizeBytes": 31344, "feeSat": 31971, "block": 978437, "poolBefore": 37284, "poolAfter": 259906 }
+    ],
+    "autoShield": {
+      "txid": "7b94dcb882e5f0f542ed82488347f9df8e39c01e2b70257b3d1f3e399910c5a7",
+      "block": 978437,
+      "blockTimeWib": "13:57:37",
+      "sizeBytes": 31344,
+      "feeSat": 31971,
+      "shieldedInSat": 254593,
+      "shieldedFromAddress": "bitcoincash:qq7dpsr4hgsztfsyl3rcr0r3w48g2uqr2gqkrjhqaa",
+      "shieldedFromTxid": "3652b26fd4acad99b8be41917736db9d07766473c82ef352ca9667a6f33a5463",
+      "privateNoteSat": 222622,
+      "poolBefore": 37284,
+      "poolAfter": 259906
+    }
+  },
+  "crossChain": {
+    "recipientHandle": "@zkriro",
+    "bnbDepositTx": "0xb7323a7c215d4992fe1ad8d9cfe45c468c376935269130287c5a9e7d3a691650",
+    "bnbBlock": 135024696,
+    "bnbBlockTimeUtc": "05:40:12",
+    "bnbBlockTimeWib": "12:40:12",
+    "amountIn": "0.5 USDT",
+    "nearSettleTx": "8iLzUKqttUDVRhauXFgsKzKB27Fu6s8NLBuUw5nSk72q",
+    "nearSettleUtc": "05:41:49",
+    "nearSettleWib": "12:41:49",
+    "nearSettleElapsed": "1 min 37 s",
+    "bchPayoutTx": "f3fa0bfa16623a8f4a8c9c23e7909481bb796b14ad2ec8b16de4a1ca7608b539",
+    "bchPayoutSat": 255511,
+    "bchPayoutAddress": "bitcoincash:qrgdtyygframeyp762pp0fypnwdg7xjyavkasqkyut",
+    "bchBlock": 978433,
+    "bchBlockTimeWib": "13:03:54",
+    "nearSolverAddress": "bitcoincash:qrdd5m5s72wzs4u373ux2fcpn02hw00u7v9wr8cex8",
+    "secondPayment": {
+      "note": "22.png: same NEAR solver address paid 254,593 sat to a one-time address of @xfajarr; this UTXO is the input shielded by 7b94dcb8",
+      "txid": "3652b26fd4acad99b8be41917736db9d07766473c82ef352ca9667a6f33a5463",
+      "sat": 254593,
+      "address": "bitcoincash:qq7dpsr4hgsztfsyl3rcr0r3w48g2uqr2gqkrjhqaa"
+    }
+  },
+  "stats": {
+    "constraints": 183095,
+    "proofSeconds": "8 to 12",
+    "poolTxKb": 31,
+    "poolTxFeeSat": 32000,
+    "opCostBudget": "82% to 88%"
+  }
+}
