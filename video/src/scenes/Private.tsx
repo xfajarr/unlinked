@@ -44,7 +44,7 @@ const Balance: React.FC = () => {
       right={
         <div style={{ opacity: p, scale: `${interpolate(p, [0, 1], [0.92, 1])}` }}>
           <Shot src="balance.png" width={W} height={H} radius={40}>
-            <Ring left={8.2} top={53.5} w={27.6} h={11} start={70} color={c.green11} mode="circle" />
+            <Ring left={8.2} top={53.5} w={27.6} h={11} start={14} color={c.green11} />
           </Shot>
         </div>
       }
@@ -295,13 +295,13 @@ const TxCard: React.FC = () => {
 export const Private: React.FC = () => (
   <AbsoluteFill style={{ fontFamily: font.ui }}>
     <Backdrop />
-    <Phase from={0} dur={270} name="Balance">
+    <Phase from={0} dur={90} name="Balance">
       <Balance />
     </Phase>
-    <Phase from={266} dur={324} name="Regular to Private">
+    <Phase from={86} dur={226} name="Regular to Private">
       <Flow />
     </Phase>
-    <Phase from={586} dur={314} name="Auto-shield tx" fadeOut={false}>
+    <Phase from={308} dur={187} name="Auto-shield tx" fadeOut={false}>
       <TxCard />
     </Phase>
   </AbsoluteFill>

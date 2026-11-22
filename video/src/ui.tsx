@@ -246,8 +246,7 @@ export const Shot: React.FC<{
 );
 
 /**
- * Marks an element in a screenshot (box in %). "click": a pointer glides in and clicks it once.
- * "circle": a line draws around it once. Neither repeats, so nothing pulses.
+ * Marks an element in a screenshot (box in %): a pointer glides in and clicks it once, so nothing pulses.
  */
 export const Ring: React.FC<{
   left: number;
@@ -257,34 +256,13 @@ export const Ring: React.FC<{
   start: number;
   radius?: number;
   color?: string;
-  mode?: "click" | "circle";
-}> = ({ left, top, w, h, start, radius = 999, color = c.blue9, mode = "click" }) => {
+}> = ({ left, top, w, h, start, radius = 999, color = c.blue9 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame - start;
   if (t < 0) return null;
   const cx = left + w / 2;
   const cy = top + h / 2;
-
-  if (mode === "circle") {
-    const draw = interpolate(t, [0, 22], [0, 360], { ...clamp, easing: ease });
-    const mask = `conic-gradient(from -90deg, #000 ${draw}deg, transparent ${draw}deg)`;
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${left - 1.4}%`,
-          top: `${top - 2.4}%`,
-          width: `${w + 2.8}%`,
-          height: `${h + 4.8}%`,
-          borderRadius: radius,
-          border: `4px solid ${color}`,
-          WebkitMaskImage: mask,
-          maskImage: mask,
-        }}
-      />
-    );
-  }
 
   const move = spring({ frame: t, fps, config: { damping: 200 }, durationInFrames: 24 });
   const x = interpolate(move, [0, 1], [cx + 16, cx]);

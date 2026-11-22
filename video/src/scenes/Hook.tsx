@@ -125,10 +125,10 @@ const Brand: React.FC = () => {
 export const Hook: React.FC = () => (
   <AbsoluteFill>
     <Backdrop />
-    <Phase from={0} dur={180} name="Statement">
+    <Phase from={0} dur={232} name="Statement">
       <Statement />
     </Phase>
-    <Phase from={176} dur={184} name="Brand" fadeOut={false}>
+    <Phase from={228} dur={72} name="Brand" fadeOut={false}>
       <Brand />
     </Phase>
   </AbsoluteFill>

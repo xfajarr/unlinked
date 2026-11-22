@@ -57,7 +57,7 @@ const PayPage: React.FC = () => {
       right={
         <ShotIn>
           <Shot src="pay.png" width={W} height={H} radius={34}>
-            <Ring left={5.8} top={60.4} w={88.4} h={8.6} start={120} />
+            <Ring left={5.8} top={60.4} w={88.4} h={8.6} start={108} />
           </Shot>
         </ShotIn>
       }
@@ -94,7 +94,7 @@ const Connected: React.FC = () => {
             }}
           >
             <Shot src="cashonize.png" width={W} height={H} radius={20} style={{ boxShadow: "none", background: "#000" }}>
-              <Ring left={12.4} top={79.6} w={14} h={8.6} start={70} color="#2fd28f" mode="circle" />
+              <Ring left={12.4} top={79.6} w={14} h={8.6} start={8} color="#2fd28f" />
             </Shot>
           </div>
         </ShotIn>
@@ -183,16 +183,16 @@ const Paid: React.FC = () => {
             </div>
           </div>
           <OutRow
-            start={70}
+            start={60}
             idx={0}
             accent
-            amount={<CountUp to={o0.sat} start={74} dur={36} />}
+            amount={<CountUp to={o0.sat} start={64} dur={36} />}
             label="sat to @xfajarr"
             detail={<Mono style={{ fontSize: 25 }}>{short(o0.address!, 12, 8)}</Mono>}
             badge={<Badge tone="green">one-time</Badge>}
           />
           <OutRow
-            start={115}
+            start={150}
             idx={1}
             amount="OP_RETURN"
             label="UNLK announcement"
@@ -205,9 +205,9 @@ const Paid: React.FC = () => {
             badge={<Badge tone="blue">key + view tag</Badge>}
           />
           <OutRow
-            start={160}
+            start={220}
             idx={2}
-            amount={<CountUp to={o2.sat} start={164} dur={36} />}
+            amount={<CountUp to={o2.sat} start={224} dur={36} />}
             label="sat change"
             detail={<Mono style={{ fontSize: 25 }}>{short(o2.address!, 12, 8)}</Mono>}
             badge={<Badge tone="grey">payer</Badge>}
@@ -224,13 +224,13 @@ const Paid: React.FC = () => {
 export const Wizard: React.FC = () => (
   <AbsoluteFill style={{ fontFamily: font.ui }}>
     <Backdrop />
-    <Phase from={0} dur={300} name="Pay page">
+    <Phase from={0} dur={196} name="Pay page">
       <PayPage />
     </Phase>
-    <Phase from={296} dur={264} name="Cashonize connected">
+    <Phase from={192} dur={96} name="Cashonize connected">
       <Connected />
     </Phase>
-    <Phase from={556} dur={464} name="Paid + tx" fadeOut={false}>
+    <Phase from={284} dur={306} name="Paid + tx" fadeOut={false}>
       <Paid />
     </Phase>
   </AbsoluteFill>

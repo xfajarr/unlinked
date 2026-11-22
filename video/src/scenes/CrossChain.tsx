@@ -48,7 +48,7 @@ const STEPS = [
 
 const Timeline: React.FC = () => {
   const frame = useCurrentFrame();
-  const line = interpolate(frame, [50, 250], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
+  const line = interpolate(frame, [105, 245], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
   const coin = usePop(16, 14);
   return (
     <AbsoluteFill style={{ padding: "110px 130px", flexDirection: "column", gap: 70 }}>
@@ -90,7 +90,7 @@ const Timeline: React.FC = () => {
           }}
         />
         {STEPS.map((s, i) => {
-          const start = 50 + i * 90;
+          const start = [105, 165, 228][i];
           const dot = interpolate(frame, [start, start + 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
           return (
             <div key={s.title} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 30, alignSelf: "stretch" }}>
@@ -160,10 +160,10 @@ const SecondPayment: React.FC = () => {
 export const CrossChain: React.FC = () => (
   <AbsoluteFill style={{ fontFamily: font.ui }}>
     <Backdrop />
-    <Phase from={0} dur={470} name="Timeline">
+    <Phase from={0} dur={365} name="Timeline">
       <Timeline />
     </Phase>
-    <Phase from={466} dur={254} name="Second payment" fadeOut={false}>
+    <Phase from={361} dur={64} name="Second payment" fadeOut={false}>
       <SecondPayment />
     </Phase>
   </AbsoluteFill>

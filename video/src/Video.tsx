@@ -14,17 +14,17 @@ import { c, font } from "./theme";
 
 const T = 20;
 
-// ElevenLabs narration (voice "Brian"), one clip per scene, start in seconds
-const VO: [string, number][] = [["1-hook", 0.8], ["2-onelink", 12], ["3-wizard", 27.5], ["4-private", 61], ["5-chain", 90.2], ["6-hood", 113.5], ["7-end", 137]];
+// ElevenLabs narration (voice "Brian"), start frame per clip; scene and phase cuts sit on its sentence breaks
+const VO: [string, number][] = [["1-hook", 12], ["2-onelink", 232], ["3-wizard", 492], ["4-private", 1062], ["5-chain", 1537], ["6-hood", 1942], ["7-end", 2367]];
 
 export const SCENES = [
-  { name: "Hook", dur: 360, C: Hook },
-  { name: "One link", dur: 480, C: OneLink },
-  { name: "WizardConnect", dur: 1020, C: Wizard },
-  { name: "Private by default", dur: 900, C: Private },
-  { name: "Any chain", dur: 720, C: CrossChain },
-  { name: "Under the hood", dur: 720, C: UnderHood },
-  { name: "End", dur: 300, C: End },
+  { name: "Hook", dur: 300, C: Hook },
+  { name: "One link", dur: 220, C: OneLink },
+  { name: "WizardConnect", dur: 590, C: Wizard },
+  { name: "Private by default", dur: 495, C: Private },
+  { name: "Any chain", dur: 425, C: CrossChain },
+  { name: "Under the hood", dur: 445, C: UnderHood },
+  { name: "End", dur: 210, C: End },
 ];
 
 export const TOTAL = SCENES.reduce((a, s) => a + s.dur, 0) - (SCENES.length - 1) * T;
@@ -54,7 +54,7 @@ export const UnlinkedDemo: React.FC = () => (
       })}
     </TransitionSeries>
     {VO.map(([f, sec]) => (
-      <Sequence key={f} from={Math.round(sec * 30)} layout="none">
+      <Sequence key={f} from={sec} layout="none">
         <Audio src={staticFile(`vo/${f}.mp3`)} />
       </Sequence>
     ))}
