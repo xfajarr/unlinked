@@ -49,6 +49,12 @@ async function useChain(p: Provider, chainId: number, chainLabel: string) {
   }
 }
 
+/** Native coin transfer (ETH, BNB, POL, AVAX) from the connected account. Returns the tx hash. */
+export async function sendNative(w: EvmWallet, chainId: number, chainLabel: string, to: string, units: bigint): Promise<string> {
+  await useChain(w.provider, chainId, chainLabel)
+  return (await w.provider.request({ method: 'eth_sendTransaction', params: [{ from: w.account, to, value: `0x${units.toString(16)}` }] })) as string
+}
+
 /** ERC-20 transfer(to, units) from the connected account. Returns the tx hash. */
 export async function sendErc20(w: EvmWallet, chainId: number, chainLabel: string, token: string, to: string, units: bigint): Promise<string> {
   await useChain(w.provider, chainId, chainLabel)

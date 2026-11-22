@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { ArrowDownUp, Check, ChevronDown, Search } from 'lucide-react'
+import { TokenBCH } from '@web3icons/react'
 import { BCH_ASSET, xchainQuote, xchainStatus, xchainSubmit, type XStatus, type XToken } from '../lib/api'
 import { EXPLORER_TX } from '../lib/config'
 import {
@@ -8,7 +9,7 @@ import {
   recoveryWif, sellAndDeposit, toUnits, type BchAsset, type BchAssetId,
 } from '../lib/bridge'
 import { CopyButton, Modal } from '../ui'
-import { EVM_CHAIN_ID, WC_PROJECT_ID, connectInjected, connectWalletConnect, hasInjected, sendErc20, type EvmWallet } from '../lib/evm'
+import { EVM_CHAIN_ID, WC_PROJECT_ID, connectInjected, connectWalletConnect, hasInjected, sendErc20, sendNative, type EvmWallet } from '../lib/evm'
 import { sendWithWallet, walletAddress } from '../lib/wallet'
 import { cleanAmount } from './pay/format'
 import { LiveStatus, Notice } from './pay/PayShell'
@@ -24,11 +25,11 @@ const Chain = ({ id, size = 20 }: { id: string; size?: number }) => <Suspense fa
 const Token = ({ symbol, size = 28 }: { symbol: string; size?: number }) => <Suspense fallback={<Blank size={size} />}><TokenLogo symbol={symbol} size={size} /></Suspense>
 
 const STORE = 'unlinked:bridge'
-const STABLES = new Set(['USDC', 'USDT', 'DAI'])
+const POPULAR = ['USDC', 'USDT', 'ETH', 'BTC', 'SOL', 'DAI', 'BNB', 'POL', 'AVAX', 'TRX']
 const POLL = 8000
 // dry quotes move nothing, but NEAR still checks address formats; these stand in until the user types their own
-const dryAddress = (chain: string) => (EVM.has(chain) ? '0x1111111111111111111111111111111111111111' : chain === 'sol' ? 'So11111111111111111111111111111111111111112' : chain === 'tron' ? 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' : '')
-const TINT: Record<BchAssetId, string> = { PUSD: '#16a34a', MUSD: '#7c3aed', BCH: '#0ac18e' }
+const dryAddress = (chain: string) => (EVM.has(chain) ? '0x1111111111111111111111111111111111111111' : chain === 'sol' ? 'So11111111111111111111111111111111111111112' : chain === 'tron' ? 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' : chain === 'btc' ? 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh' : '')
+const ICON: Record<Exclude<BchAssetId, 'BCH'>, string> = { PUSD: '/tokens/pusd.svg', MUSD: '/tokens/musd.png' }
 
 type Dir = 'in' | 'out'
 type Saved = {
@@ -64,8 +65,8 @@ const load = (): Saved | null => {
 const short = (a: string, n = 6) => (a.length > 2 * n + 14 ? `${a.slice(0, n + 12)}…${a.slice(-n)}` : a)
 
 function AssetMark({ a, size = 28 }: { a: BchAsset; size?: number }) {
-  if (a.id === 'BCH') return <Token symbol="BCH" size={size} />
-  return <span className="br-letter" style={{ width: size, height: size, background: TINT[a.id], fontSize: size * 0.42 }} aria-hidden>{a.id[0]}</span>
+  if (a.id === 'BCH') return <TokenBCH variant="background" size={size} style={{ display: 'block', borderRadius: '50%', flexShrink: 0 }} aria-hidden />
+  return <img src={ICON[a.id]} width={size} height={size} alt="" style={{ display: 'block', borderRadius: '50%', flexShrink: 0 }} />
 }
 
 export default function Bridge() {
@@ -90,7 +91,7 @@ export default function Bridge() {
       <main className="br-main">
         <div className="br-head">
           <h1>Bridge</h1>
-          <p>Move stablecoins between other chains and Bitcoin Cash. No account needed.</p>
+          <p>Move stablecoins and tokens from other chains in and out of Bitcoin Cash. No account needed.</p>
         </div>
         <div className="br-card">{run ? <Run s={run} update={update} /> : <Form onStart={update} />}</div>
       </main>
@@ -118,9 +119,10 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
   const pairs = useMemo(() => {
     if (!x.tokens) return null
     const out: XToken[] = []
-    for (const list of groupByChain(x.tokens).values()) out.push(...list.filter((t) => STABLES.has(t.symbol.toUpperCase())))
+    for (const list of groupByChain(x.tokens).values()) out.push(...list)
     const rank = (c: string) => (MAIN_CHAINS.includes(c) ? MAIN_CHAINS.indexOf(c) : 99)
-    return out.sort((a, b) => rank(a.blockchain) - rank(b.blockchain) || chainName(a.blockchain).localeCompare(chainName(b.blockchain)) || a.symbol.localeCompare(b.symbol))
+    const pop = (sym: string) => (POPULAR.includes(sym.toUpperCase()) ? POPULAR.indexOf(sym.toUpperCase()) : 99)
+    return out.sort((a, b) => rank(a.blockchain) - rank(b.blockchain) || chainName(a.blockchain).localeCompare(chainName(b.blockchain)) || pop(a.symbol) - pop(b.symbol) || a.symbol.localeCompare(b.symbol))
   }, [x.tokens])
   const [dir, setDir] = useState<Dir>('in')
   const [assetId, setAssetId] = useState('')
@@ -133,7 +135,7 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const token = pairs?.find((t) => t.assetId === assetId) ?? pairs?.[0]
+  const token = pairs?.find((t) => t.assetId === assetId) ?? pairs?.find((t) => t.blockchain === 'base' && t.symbol === 'USDC') ?? pairs?.[0]
   const chain = token?.blockchain ?? 'base'
   const A = bchAsset(asset)
   const decimals = dir === 'in' ? token?.decimals ?? 6 : A.decimals
@@ -321,7 +323,7 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
         <OtherPicker pairs={pairs} value={token.assetId} onPick={(id) => (setAssetId(id), setPick(null), setOther(''))} onClose={() => setPick(null)} />
       )}
       {pick === 'bch' && (
-        <Modal title="Asset on Bitcoin Cash" onClose={() => setPick(null)}>
+        <Modal title="Receive on Bitcoin Cash" onClose={() => setPick(null)}>
           <div className="pay-chain-list">
             {BCH_ASSETS.map((a) => (
               <button key={a.id} type="button" className={`choice${a.id === asset ? ' on' : ''}`} aria-pressed={a.id === asset} onClick={() => (setAsset(a.id), setPick(null))}>
@@ -362,7 +364,7 @@ function Skeleton() {
         <span className="br-skel-track"><i /><i /><i /></span>
         <span className="br-skel-node bch"><Chain id="bch" size={22} /></span>
       </div>
-      <p className="br-skel-note">Finding stablecoin routes<span className="br-dots"><i>.</i><i>.</i><i>.</i></span></p>
+      <p className="br-skel-note">Finding routes<span className="br-dots"><i>.</i><i>.</i><i>.</i></span></p>
     </div>
   )
 }
@@ -382,26 +384,65 @@ function Field({ label, action, value, onChange, placeholder, hint }: { label: s
 }
 
 function OtherPicker({ pairs, value, onPick, onClose }: { pairs: XToken[]; value: string; onPick: (assetId: string) => void; onClose: () => void }) {
-  const [q, setQ] = useState('')
-  const term = q.trim().toLowerCase()
-  const hits = pairs.filter((t) => !term || t.symbol.toLowerCase().includes(term) || chainName(t.blockchain).toLowerCase().includes(term) || t.blockchain.includes(term))
+  const current = pairs.find((t) => t.assetId === value)
+  const chains = useMemo(() => [...new Set(pairs.map((t) => t.blockchain))], [pairs])
+  const [sel, setSel] = useState<string>(current?.blockchain ?? 'all')
+  const [cq, setCq] = useState('')
+  const [tq, setTq] = useState('')
+  const cterm = cq.trim().toLowerCase()
+  const shownChains = chains.filter((c) => !cterm || chainName(c).toLowerCase().includes(cterm) || c.includes(cterm))
+  const tterm = tq.trim().toLowerCase()
+  const inChain = pairs.filter((t) => sel === 'all' || t.blockchain === sel)
+  const list = inChain.filter((t) => !tterm || t.symbol.toLowerCase().includes(tterm) || chainName(t.blockchain).toLowerCase().includes(tterm) || t.contractAddress?.toLowerCase() === tterm)
+  const popular = sel === 'all' ? [] : inChain.filter((t) => POPULAR.includes(t.symbol.toUpperCase())).slice(0, 6)
+  const price = (p: number) => (p >= 1000 ? `$${Math.round(p).toLocaleString('en-US')}` : p >= 1 ? `$${p.toFixed(2)}` : p > 0 ? `$${p.toPrecision(3)}` : '')
   return (
-    <Modal title="Stablecoin and chain" onClose={onClose}>
-      <div className="field-wrap">
-        <span className="field-prefix"><Search size={18} /></span>
-        <input className="field pre" autoFocus placeholder="Search token or chain" aria-label="Search token or chain" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      <div className="pay-chain-list">
-        {hits.map((t) => (
-          <button key={t.assetId} type="button" className={`choice${t.assetId === value ? ' on' : ''}`} aria-pressed={t.assetId === value} onClick={() => onPick(t.assetId)}>
-            <span className="br-sel-ico"><Token symbol={t.symbol} size={40} /><span className="br-sel-chain lg"><Chain id={t.blockchain} size={18} /></span></span>
-            <div style={{ minWidth: 0 }}>
-              <div className="choice-name">{t.symbol}</div>
-              <div className="choice-sym">on {chainName(t.blockchain)}</div>
+    <Modal title="Select token" onClose={onClose} className="br-pk-modal">
+      <div className="br-pk">
+        <aside className="br-pk-chains">
+          <div className="field-wrap br-pk-search">
+            <span className="field-prefix"><Search size={16} /></span>
+            <input className="field pre" placeholder="Search chains" aria-label="Search chains" value={cq} onChange={(e) => setCq(e.target.value)} />
+          </div>
+          <div className="br-pk-chain-list" role="listbox" aria-label="Chains">
+            {!cterm && (
+              <button type="button" role="option" aria-selected={sel === 'all'} className={`br-pk-chain${sel === 'all' ? ' on' : ''}`} onClick={() => setSel('all')}>
+                <span className="br-pk-all" aria-hidden>{chains.slice(0, 4).map((c) => <Chain key={c} id={c} size={10} />)}</span>All chains
+              </button>
+            )}
+            {shownChains.map((c) => (
+              <button key={c} type="button" role="option" aria-selected={sel === c} className={`br-pk-chain${sel === c ? ' on' : ''}`} onClick={() => setSel(c)}>
+                <Chain id={c} size={22} />{chainName(c)}
+              </button>
+            ))}
+          </div>
+        </aside>
+        <section className="br-pk-tokens">
+          <div className="field-wrap br-pk-search">
+            <span className="field-prefix"><Search size={16} /></span>
+            <input className="field pre" autoFocus placeholder="Search token or paste address" aria-label="Search token" value={tq} onChange={(e) => setTq(e.target.value)} />
+          </div>
+          {popular.length > 0 && !tterm && (
+            <div className="br-pk-pop">
+              {popular.map((t) => (
+                <button key={t.assetId} type="button" className={`br-pk-chip${t.assetId === value ? ' on' : ''}`} onClick={() => onPick(t.assetId)}>
+                  <span className="br-sel-ico"><Token symbol={t.symbol} size={22} /><span className="br-sel-chain"><Chain id={t.blockchain} size={11} /></span></span>{t.symbol}
+                </button>
+              ))}
             </div>
-          </button>
-        ))}
-        {hits.length === 0 && <p className="help">Nothing matches "{q}".</p>}
+          )}
+          <div className="br-pk-head">{sel === 'all' ? `All tokens (${list.length})` : `Tokens on ${chainName(sel)} (${list.length})`}</div>
+          <div className="br-pk-list">
+            {list.map((t) => (
+              <button key={t.assetId} type="button" className={`br-pk-row${t.assetId === value ? ' on' : ''}`} onClick={() => onPick(t.assetId)}>
+                <span className="br-sel-ico"><Token symbol={t.symbol} size={36} /><span className="br-sel-chain lg"><Chain id={t.blockchain} size={16} /></span></span>
+                <span className="br-pk-row-txt"><b>{t.symbol}</b><small>{chainName(t.blockchain)}{t.contractAddress ? ` ${t.contractAddress.slice(0, 6)}…${t.contractAddress.slice(-4)}` : ', native'}</small></span>
+                <span className="br-pk-price">{price(t.price)}</span>
+              </button>
+            ))}
+            {list.length === 0 && <p className="help">Nothing matches "{tq}".</p>}
+          </div>
+        </section>
       </div>
     </Modal>
   )
@@ -525,7 +566,7 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
   const showDeposit = !finished && at === 0 && sendTo
   const qrValue = sendTo && s.dir === 'out' && !A.category ? `${sendTo}?amount=${s.amount}` : sendTo
   const chainId = EVM_CHAIN_ID[s.chain]
-  const evmPay = s.dir === 'in' && chainId && s.contract?.startsWith('0x') && s.inUnits && !s.depositMemo
+  const evmPay = s.dir === 'in' && chainId && (!s.contract || s.contract.startsWith('0x')) && s.inUnits && !s.depositMemo
 
   const sent = (tx: string) => update({ ...latest.current, sentTx: tx })
   const payEvm = async (kind: 'injected' | 'walletconnect') => {
@@ -534,7 +575,7 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
     try {
       const w: EvmWallet = kind === 'injected' ? await connectInjected() : await connectWalletConnect(chainId!, setWcUri)
       setWcUri(null)
-      const tx = await sendErc20(w, chainId!, chain, s.contract!, s.depositAddress!, BigInt(s.inUnits!))
+      const tx = s.contract ? await sendErc20(w, chainId!, chain, s.contract, s.depositAddress!, BigInt(s.inUnits!)) : await sendNative(w, chainId!, chain, s.depositAddress!, BigInt(s.inUnits!))
       xchainSubmit({ data: { txHash: tx, depositAddress: s.depositAddress! } }).catch(() => {})
       sent(tx)
       if (w.kind === 'walletconnect') w.provider.disconnect?.().catch(() => {})

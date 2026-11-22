@@ -81,7 +81,7 @@ export function ModalCancel({ children, ...rest }: React.ButtonHTMLAttributes<HT
   return <button type="button" {...rest} onClick={close}>{children}</button>
 }
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Modal({ title, onClose, children, className }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const [leaving, setLeaving] = useState(false)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
@@ -105,7 +105,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   return (
     <ModalCtx.Provider value={close}>
       <div className={`backdrop${leaving ? ' leaving' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
-        <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
+        <div className={`modal${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-label={title}>
           <div className="modal-head">
             <h2 className="modal-title">{title}</h2>
             <button className="orb sm" onClick={close} aria-label="Close"><X size={20} strokeWidth={2.4} /></button>
