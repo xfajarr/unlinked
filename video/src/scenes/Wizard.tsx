@@ -93,9 +93,7 @@ const Connected: React.FC = () => {
               boxShadow: shadow.lift,
             }}
           >
-            <Shot src="cashonize.png" width={W} height={H} radius={20} style={{ boxShadow: "none", background: "#000" }}>
-              <Ring left={12.4} top={79.6} w={14} h={8.6} start={8} color="#2fd28f" />
-            </Shot>
+            <Shot src="cashonize.png" width={W} height={H} radius={20} style={{ boxShadow: "none", background: "#000" }} />
           </div>
         </ShotIn>
       }

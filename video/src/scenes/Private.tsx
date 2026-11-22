@@ -11,7 +11,6 @@ import {
   Kicker,
   Mono,
   Phase,
-  Ring,
   Shot,
   Sub,
   TwoUp,
@@ -38,17 +37,40 @@ const Balance: React.FC = () => {
             <Kicker>Private by default</Kicker>
           </div>
           <H1 style={fadeUp(frame, 6)}>Money arrives, then goes private on its own.</H1>
-          <Sub style={fadeUp(frame, 14)}>@xfajarr's real balance. The private part is a shielded note.</Sub>
+          <Sub style={fadeUp(frame, 14)}>@xfajarr's real balance on mainnet.</Sub>
         </>
       }
       right={
-        <div style={{ opacity: p, scale: `${interpolate(p, [0, 1], [0.92, 1])}` }}>
-          <Shot src="balance.png" width={W} height={H} radius={40}>
-            <Ring left={8.2} top={53.5} w={27.6} h={11} start={14} color={c.green11} />
-          </Shot>
+        <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+          <div style={{ opacity: p, scale: `${interpolate(p, [0, 1], [0.92, 1])}` }}>
+            <Shot src="balance.png" width={W} height={H} radius={40} />
+          </div>
+          <Meaning start={30} tone="green" label="Private">
+            in the shielded pool. No one can trace it.
+          </Meaning>
+          <Meaning start={46} tone="amber" label="Arriving">
+            just landed. It turns private on its own.
+          </Meaning>
         </div>
       }
     />
+  );
+};
+
+const Meaning: React.FC<{ start: number; tone: "green" | "amber"; label: string; children: React.ReactNode }> = ({
+  start,
+  tone,
+  label,
+  children,
+}) => {
+  const frame = useCurrentFrame();
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 18, paddingLeft: 8, fontSize: 30, color: c.ink11, ...fadeUp(frame, start, 22, 20) }}>
+      <Badge tone={tone} style={{ height: 50, fontSize: 27, minWidth: 150, justifyContent: "center" }}>
+        {label}
+      </Badge>
+      <span>{children}</span>
+    </div>
   );
 };
 
@@ -114,76 +136,26 @@ const Arrow: React.FC<{ start: number }> = ({ start }) => {
   );
 };
 
-const Toggle: React.FC<{ start: number }> = ({ start }) => {
-  const frame = useCurrentFrame();
-  const t = interpolate(frame, [start, start + 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
-  return (
-    <div
-      style={{
-        position: "relative",
-        display: "flex",
-        padding: 6,
-        borderRadius: 999,
-        background: c.well,
-        fontSize: 32,
-        fontWeight: 600,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 6,
-          bottom: 6,
-          left: 6,
-          width: 220,
-          borderRadius: 999,
-          background: "#fff",
-          boxShadow: "0 0 0 1px rgba(15,20,40,0.1)",
-          translate: `${t * 220}px 0px`,
-        }}
-      />
-      {["Regular", "Private"].map((label, i) => (
-        <div
-          key={label}
-          style={{
-            position: "relative",
-            width: 220,
-            height: 66,
-            display: "grid",
-            placeItems: "center",
-            color: (i === 1 ? t > 0.5 : t <= 0.5) ? (i === 1 ? c.green11 : c.ink12) : c.ink10,
-          }}
-        >
-          {label}
-        </div>
-      ))}
-    </div>
-  );
-};
-
 const Flow: React.FC = () => {
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 56 }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
         <H1 size={76} style={{ textAlign: "center", ...fadeUp(frame, 0) }}>
-          Regular to Private, automatically.
+          Visible on chain, then private. Automatically.
         </H1>
-        <div style={fadeUp(frame, 10)}>
-          <Toggle start={200} />
-        </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
         <Node
           start={24}
           active={36}
           tone="grey"
-          title="Arrived"
+          title="1. Visible on chain"
           value={<CountUp to={as.shieldedInSat} start={30} dur={36} />}
           unit="sat"
           foot={
             <>
-              on one-time address
+              landed on a one-time address
               <br />
               <Mono style={{ fontSize: 24 }}>{short(as.shieldedFromAddress, 10, 6)}</Mono>
             </>
@@ -194,11 +166,11 @@ const Flow: React.FC = () => {
           start={70}
           active={110}
           tone="blue"
-          title="Auto-shield"
+          title="2. Zero-knowledge proof"
           value="Groth16"
           foot={
             <>
-              proof built in the browser,
+              built in the browser,
               <br />
               fee {fmt(as.feeSat)} sat
             </>
@@ -209,14 +181,14 @@ const Flow: React.FC = () => {
           start={130}
           active={180}
           tone="green"
-          title="Private"
+          title="3. Private"
           value={<CountUp to={as.privateNoteSat} start={180} dur={40} />}
           unit="sat"
           foot={
             <>
-              shielded note, the same
+              inside the pool. No one can
               <br />
-              0.00222622 BCH on the balance
+              follow where it goes next.
             </>
           }
         />
@@ -295,13 +267,13 @@ const TxCard: React.FC = () => {
 export const Private: React.FC = () => (
   <AbsoluteFill style={{ fontFamily: font.ui }}>
     <Backdrop />
-    <Phase from={0} dur={90} name="Balance">
+    <Phase from={0} dur={135} name="Balance">
       <Balance />
     </Phase>
-    <Phase from={86} dur={226} name="Regular to Private">
+    <Phase from={131} dur={226} name="Visible to private">
       <Flow />
     </Phase>
-    <Phase from={308} dur={187} name="Auto-shield tx" fadeOut={false}>
+    <Phase from={353} dur={187} name="Auto-shield tx" fadeOut={false}>
       <TxCard />
     </Phase>
   </AbsoluteFill>
