@@ -1,0 +1,17 @@
+{
+  "name": "@unlinked/shield-lib",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "fixtures": "node scripts/gen-fixtures.ts"
+  },
+  "dependencies": {
+    "circomlibjs": "0.1.7"
+  },
+  "devDependencies": {
+    "snarkjs": "0.7.5"
+  }
+}

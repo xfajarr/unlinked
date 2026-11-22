@@ -1,0 +1,345 @@
+{
+  "version": "unlinked-shield/chain/v0",
+  "spec": "docs/superpowers/specs/2026-11-21-unlinked-shield-design.md",
+  "encoding": "hex is big-endian; field elements 32 B; publicAmount is i64 two-complement 8 B; publicSignals are decimal strings (snarkjs)",
+  "circuit": {
+    "publicSignals": [
+      "S0",
+      "H"
+    ],
+    "zkeySha256": "f867fd0ab34d6f99d586f5c808d630f73a28f674f18af230628333e2e72abbe7",
+    "verificationKey": "shield/circuits/build/verification_key.json"
+  },
+  "constants": {
+    "TREE_DEPTH": 20,
+    "NULL_DEPTH": 40,
+    "MAX_FEE": "50000",
+    "Z1": "2098f5fb9e239eab3ceac3f27b81e481dc3124d55ffed523a839ee8446b64864",
+    "RcEmpty": "2134e76ac5d21aab186c2be1dd8f84ee880a1e46eaf712f9d371b6df22191f3e",
+    "RnEmpty": "1334fa4b552f00ef403361c935c1abcf896851003c40daa93bb0fd0a0bb9a881"
+  },
+  "genesis": {
+    "S": "29b00a2ed6d3d1b778619f7259f5a9fe1013110072b3bc91190eb197f61a7ae5",
+    "Rc": "2134e76ac5d21aab186c2be1dd8f84ee880a1e46eaf712f9d371b6df22191f3e",
+    "n": 0,
+    "Rn": "1334fa4b552f00ef403361c935c1abcf896851003c40daa93bb0fd0a0bb9a881",
+    "poolValue": "1000"
+  },
+  "parties": {
+    "alice": {
+      "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+      "scanPub": "033e4d78851def7213e350cda03275ae179b4e12cf13b34ab87ff7ae8ac184848d",
+      "shieldPk": "243a6a5eb16bda710e0ecf5b358002869f564bc56ef06ee50811916ce0eeeafd"
+    },
+    "bob": {
+      "mnemonic": "legal winner thank year wave sausage worth useful legal winner thank yellow",
+      "scanPub": "024fec4ccb68d33d37f122956e057decfd2270692614ccdab28f3fe05730a1bba1",
+      "shieldPk": "163ffd24f0bdfcbd802c515ef512871f6432f33019d7d750fff173704f069baf"
+    },
+    "withdrawRecipient": {
+      "address": "bchtest:qqwsgpmldztrg4ppuc4gucvmdvafvv070sha3g88cd",
+      "lockingBytecode": "76a9141d04077f6896345421e62a8e619b6b3a9631fe7c88ac"
+    }
+  },
+  "steps": [
+    {
+      "name": "deposit",
+      "about": "Alice shields 1,000,000 sat into two notes (700,000 + 300,000). Both inputs are dummies, so N0 = N1 = 0. publicAmount > 0, so payout = fee = 0.",
+      "pre": {
+        "S0": "29b00a2ed6d3d1b778619f7259f5a9fe1013110072b3bc91190eb197f61a7ae5",
+        "Rc": "2134e76ac5d21aab186c2be1dd8f84ee880a1e46eaf712f9d371b6df22191f3e",
+        "n": 0,
+        "Rn": "1334fa4b552f00ef403361c935c1abcf896851003c40daa93bb0fd0a0bb9a881",
+        "poolValue": "1000"
+      },
+      "publicSignals": [
+        "18855862155559899944062796955744461076434091192347247589135671394126716893925",
+        "5182454961460720229323596616284861306496871661002312526191776714523707619250"
+      ],
+      "proof": {
+        "pi_a": [
+          "797051572922990372140699095655253071000258192863865751567820526352155022974",
+          "7121899131088594408464530655507040600572975707347401419953123035544049111340",
+          "1"
+        ],
+        "pi_b": [
+          [
+            "14139213978314715624524262663369015662015348200887243440936929571988161732357",
+            "1348283685911794170887116283172857284822158407406593041507485278770242621016"
+          ],
+          [
+            "8227690806655225010586212878208944950111946706631060388703710592780354136867",
+            "1284303937550521937168180210646253089990944136911293358133724773176277256646"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ],
+        "pi_c": [
+          "7173267176473839306119676090706109082541447879349156597286668767319608087416",
+          "705744264702283678113420901140888854184509239460372245651245786214393190799",
+          "1"
+        ],
+        "protocol": "groth16",
+        "curve": "bn128"
+      },
+      "pieces": {
+        "S1": "139634318dd62f8bdb68d591a1fa88b6af150d4e98c7de6a1f09cbbe9a8af684",
+        "publicAmount": "00000000000f4240",
+        "publicAmountDecimal": "1000000",
+        "C0": "060d8bf851c764d8471a8ee18f5ba73beae2a47f24b5ccda27e4e42a1d13f16b",
+        "C1": "0fb19458d4e3dc49952fd2174ebf95b4d9d505297bac344cc9924c6a7880665d",
+        "N0": "0000000000000000000000000000000000000000000000000000000000000000",
+        "N1": "0000000000000000000000000000000000000000000000000000000000000000",
+        "extData": "000000000000000000000000000000000002d33ab00aee237a379fcb49b16e3c0697ad5cc1aa6e76057c7ee5cca3c04aa40a46fb5eccfa9418d9cd03b2db7ac9daaf7cfd4e50d8926ca79983a7661a12c1305fa817fd4bc5d44977e452edcb921d1d1feab5",
+        "extDataHash": "c42bde2aa6f800eca9475df80fc118a7544aa645fdc0218d131f1a33f6ee7dfd"
+      },
+      "extDataFields": {
+        "recipientLock": "",
+        "payout": "0",
+        "fee": "0",
+        "ct0": "02d33ab00aee237a379fcb49b16e3c0697ad5cc1aa6e76057c7ee5cca3c04aa40a46fb5eccfa9418d9cd",
+        "ct1": "03b2db7ac9daaf7cfd4e50d8926ca79983a7661a12c1305fa817fd4bc5d44977e452edcb921d1d1feab5"
+      },
+      "payload": "139634318dd62f8bdb68d591a1fa88b6af150d4e98c7de6a1f09cbbe9a8af68400000000000f4240060d8bf851c764d8471a8ee18f5ba73beae2a47f24b5ccda27e4e42a1d13f16b0fb19458d4e3dc49952fd2174ebf95b4d9d505297bac344cc9924c6a7880665d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c42bde2aa6f800eca9475df80fc118a7544aa645fdc0218d131f1a33f6ee7dfd",
+      "H": "0b752a622fe635a22e740452a9e1f9b3e2e72ec251c88de1d86f854b15d6b7b2",
+      "post": {
+        "S1": "139634318dd62f8bdb68d591a1fa88b6af150d4e98c7de6a1f09cbbe9a8af684",
+        "Rc": "0acba07e537d9db77cbc391435b51ee8fa038bc9f01e383ebc2e66b7681b1000",
+        "n": 2,
+        "Rn": "1334fa4b552f00ef403361c935c1abcf896851003c40daa93bb0fd0a0bb9a881",
+        "poolValue": "1001000"
+      },
+      "newPoolValue": "1001000",
+      "payoutOutput": null,
+      "notes": {
+        "spent": [],
+        "created": [
+          {
+            "ref": "deposit.out0",
+            "owner": "alice",
+            "leafIndex": 0,
+            "amount": "700000"
+          },
+          {
+            "ref": "deposit.out1",
+            "owner": "alice",
+            "leafIndex": 1,
+            "amount": "300000"
+          }
+        ]
+      },
+      "timingMs": {
+        "witness": 5712,
+        "prove": 37813
+      }
+    },
+    {
+      "name": "transfer",
+      "about": "Alice spends both notes (2 real inputs): 650,000 to Bob, 348,000 change to herself; the pool pays a 2,000 sat miner fee.",
+      "pre": {
+        "S0": "139634318dd62f8bdb68d591a1fa88b6af150d4e98c7de6a1f09cbbe9a8af684",
+        "Rc": "0acba07e537d9db77cbc391435b51ee8fa038bc9f01e383ebc2e66b7681b1000",
+        "n": 2,
+        "Rn": "1334fa4b552f00ef403361c935c1abcf896851003c40daa93bb0fd0a0bb9a881",
+        "poolValue": "1001000"
+      },
+      "publicSignals": [
+        "8859331409583382851297324955480335747261350508767796474957452085203611350660",
+        "11579865868765071788535374207180473671423947911532320910010990845606984460822"
+      ],
+      "proof": {
+        "pi_a": [
+          "19493471343251715204431780851306310906772114801252278093729963114246341987225",
+          "11707934491156793830430295879498990598010318475000478996916504737061066904245",
+          "1"
+        ],
+        "pi_b": [
+          [
+            "6823843157603102763475718254719621250353590354469611715970530545946557349544",
+            "9189930556485031006253275079459291137257204244831344031619395336892484792200"
+          ],
+          [
+            "20509439603904945188665173781510377853751998430672017899098233959618796398068",
+            "601325351877468605234886740297049321685216414550049088471417512869739844098"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ],
+        "pi_c": [
+          "15280408278672541299858731190322495552463471106173086328067693269670588659616",
+          "8275707550820435694254882866058906011510008499479379222858895110459820738943",
+          "1"
+        ],
+        "protocol": "groth16",
+        "curve": "bn128"
+      },
+      "pieces": {
+        "S1": "19aad16cec8e14ee2d46328abf916af6049bb83a6770677f25dfe16146ef12fc",
+        "publicAmount": "fffffffffffff830",
+        "publicAmountDecimal": "-2000",
+        "C0": "233b8dcffe660fce2a7ba1a345a4f9ba9e56e3b054c314c5a1a175fdaeb18813",
+        "C1": "07da89d272279452758c01b7429e29799bdd3439ae0fb1955ebe6f317adef0d9",
+        "N0": "246edd0816991c7838791bce943b95d42f760067ce781154b1392a64f9113969",
+        "N1": "1a86366ea13d16153cb4b699acab31b7af0757745d3b52c10d4f356867bea22b",
+        "extData": "00000000000000000000000000000007d003bbeda36cc268c2837834e838b78dbb3895bb6ff7fa24d2a5611791c0ae1f661f346dae35688708310e035d6cafd6ee609db03de2b2176ef5d8cec1d9db0feca0f3a9a968d4fa9ae92d8b1c0dfb742467bb7add",
+        "extDataHash": "e93ee1b2ebd8e553a05b1f7e74731b02cdfdddb42875cf90a12989cc65f3cb64"
+      },
+      "extDataFields": {
+        "recipientLock": "",
+        "payout": "0",
+        "fee": "2000",
+        "ct0": "03bbeda36cc268c2837834e838b78dbb3895bb6ff7fa24d2a5611791c0ae1f661f346dae35688708310e",
+        "ct1": "035d6cafd6ee609db03de2b2176ef5d8cec1d9db0feca0f3a9a968d4fa9ae92d8b1c0dfb742467bb7add"
+      },
+      "payload": "19aad16cec8e14ee2d46328abf916af6049bb83a6770677f25dfe16146ef12fcfffffffffffff830233b8dcffe660fce2a7ba1a345a4f9ba9e56e3b054c314c5a1a175fdaeb1881307da89d272279452758c01b7429e29799bdd3439ae0fb1955ebe6f317adef0d9246edd0816991c7838791bce943b95d42f760067ce781154b1392a64f91139691a86366ea13d16153cb4b699acab31b7af0757745d3b52c10d4f356867bea22be93ee1b2ebd8e553a05b1f7e74731b02cdfdddb42875cf90a12989cc65f3cb64",
+      "H": "1999f8c90bab9e6ec4049f39004d5e5e216b8fba5b1f8d4279576c597638aa16",
+      "post": {
+        "S1": "19aad16cec8e14ee2d46328abf916af6049bb83a6770677f25dfe16146ef12fc",
+        "Rc": "07745b2f231a4674723407f5164bbefc0d8ea2dd3f6a36882b1e84b6bdf61ee2",
+        "n": 4,
+        "Rn": "1f3f412009417b9390a52fe0db8f1e4fbbb47d617de7553349446654c504a6ff",
+        "poolValue": "999000"
+      },
+      "newPoolValue": "999000",
+      "payoutOutput": null,
+      "notes": {
+        "spent": [
+          {
+            "ref": "deposit.out0",
+            "leafIndex": 0,
+            "amount": "700000"
+          },
+          {
+            "ref": "deposit.out1",
+            "leafIndex": 1,
+            "amount": "300000"
+          }
+        ],
+        "created": [
+          {
+            "ref": "transfer.out0",
+            "owner": "bob",
+            "leafIndex": 2,
+            "amount": "650000"
+          },
+          {
+            "ref": "transfer.out1",
+            "owner": "alice",
+            "leafIndex": 3,
+            "amount": "348000"
+          }
+        ]
+      },
+      "timingMs": {
+        "witness": 508,
+        "prove": 14399
+      }
+    },
+    {
+      "name": "withdraw",
+      "about": "Bob withdraws 400,000 sat to a P2PKH address from his 650,000 note (one real input, one dummy, so N1 = 0); 3,000 sat fee; 247,000 change to Bob plus a 0-sat note.",
+      "pre": {
+        "S0": "19aad16cec8e14ee2d46328abf916af6049bb83a6770677f25dfe16146ef12fc",
+        "Rc": "07745b2f231a4674723407f5164bbefc0d8ea2dd3f6a36882b1e84b6bdf61ee2",
+        "n": 4,
+        "Rn": "1f3f412009417b9390a52fe0db8f1e4fbbb47d617de7553349446654c504a6ff",
+        "poolValue": "999000"
+      },
+      "publicSignals": [
+        "11609630617166854204848553712351080708807301874196641430258180705167172637436",
+        "12169804725106744521957735817756421422876429789828717919407589024375559076209"
+      ],
+      "proof": {
+        "pi_a": [
+          "637438959657771794755248422690452110051795302581813840840900960369876984263",
+          "6848021374273836249197282032770910194283349901656445775551577705790244385676",
+          "1"
+        ],
+        "pi_b": [
+          [
+            "13234082898396646435840579918807218919879951307584166066406098226556283905043",
+            "9232742638395482343922084434750960495407148086304820521646568307772139641888"
+          ],
+          [
+            "12949823549074344427792143987378691788270630888365001574636492050869674880971",
+            "12797444121216617032393754683238207080948714351509747039986139413083017747581"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ],
+        "pi_c": [
+          "12844276654243039889899183921407247640535694536160863363359028547960846595494",
+          "21437960790158894408672360229682358524686593655442644245663844940370152612405",
+          "1"
+        ],
+        "protocol": "groth16",
+        "curve": "bn128"
+      },
+      "pieces": {
+        "S1": "24fa68f7c9e1cac1974377fe053bc8492ee7b10c5586aed4846f7eb4eb812b54",
+        "publicAmount": "fffffffffff9d9c8",
+        "publicAmountDecimal": "-403000",
+        "C0": "0bb5481207af81a405d4c7c9a0d787942f4e38fb43c2decb295a294ae6c3b29b",
+        "C1": "15f8aa2ecdba521275fd3ed92c9debbaef699b3ce5a3da714c7423a771ccf52c",
+        "N0": "1ded904f39ae062f0ea32395910e9d6fdd375a656d1fc41515e5272b26bfa4e3",
+        "N1": "0000000000000000000000000000000000000000000000000000000000000000",
+        "extData": "1976a9141d04077f6896345421e62a8e619b6b3a9631fe7c88ac0000000000061a800000000000000bb803353a3028deb14931509373bbd2bcde341096c04e8ca53599eaf0b57b0743e08815c83c0920819cee99038ca32c23288baaf5e17248e7d48f0a92b37b2ee5038a2ad3c0cd2ae86a12f2303bb84f15e81f481b1a",
+        "extDataHash": "6af72c4b971c2874fa47772457753365bded94b03aeebfeb8ca11bd1d4cb4eed"
+      },
+      "extDataFields": {
+        "recipientLock": "76a9141d04077f6896345421e62a8e619b6b3a9631fe7c88ac",
+        "payout": "400000",
+        "fee": "3000",
+        "ct0": "03353a3028deb14931509373bbd2bcde341096c04e8ca53599eaf0b57b0743e08815c83c0920819cee99",
+        "ct1": "038ca32c23288baaf5e17248e7d48f0a92b37b2ee5038a2ad3c0cd2ae86a12f2303bb84f15e81f481b1a"
+      },
+      "payload": "24fa68f7c9e1cac1974377fe053bc8492ee7b10c5586aed4846f7eb4eb812b54fffffffffff9d9c80bb5481207af81a405d4c7c9a0d787942f4e38fb43c2decb295a294ae6c3b29b15f8aa2ecdba521275fd3ed92c9debbaef699b3ce5a3da714c7423a771ccf52c1ded904f39ae062f0ea32395910e9d6fdd375a656d1fc41515e5272b26bfa4e300000000000000000000000000000000000000000000000000000000000000006af72c4b971c2874fa47772457753365bded94b03aeebfeb8ca11bd1d4cb4eed",
+      "H": "1ae7dd8963eb364da194027f526734446329d4fdee47fe363095ce815a9ab971",
+      "post": {
+        "S1": "24fa68f7c9e1cac1974377fe053bc8492ee7b10c5586aed4846f7eb4eb812b54",
+        "Rc": "0d0d43ceb0a125e0f7295cd97e91050f11d8d7aebbf0d9554ac38db7740736e9",
+        "n": 6,
+        "Rn": "0b2f488bc747b0e0d61d1b0d1981799e9946b27a42ae777c906260db10846cdf",
+        "poolValue": "596000"
+      },
+      "newPoolValue": "596000",
+      "payoutOutput": {
+        "lockingBytecode": "76a9141d04077f6896345421e62a8e619b6b3a9631fe7c88ac",
+        "value": "400000"
+      },
+      "notes": {
+        "spent": [
+          {
+            "ref": "transfer.out0",
+            "leafIndex": 2,
+            "amount": "650000"
+          }
+        ],
+        "created": [
+          {
+            "ref": "withdraw.out0",
+            "owner": "bob",
+            "leafIndex": 4,
+            "amount": "247000"
+          },
+          {
+            "ref": "withdraw.out1",
+            "owner": "bob",
+            "leafIndex": 5,
+            "amount": "0"
+          }
+        ]
+      },
+      "timingMs": {
+        "witness": 1548,
+        "prove": 35715
+      }
+    }
+  ]
+}
