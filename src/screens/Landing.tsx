@@ -211,6 +211,7 @@ export default function Landing() {
           <button onClick={() => scrollTo('how')}>How it works</button>
           <button onClick={() => scrollTo('privacy')}>Privacy</button>
           <button onClick={() => scrollTo('faq')}>FAQ</button>
+          <button onClick={() => go('/bridge')}>PUSD bridge</button>
         </nav>
         <button className="btn btn-primary md" onClick={start}>{user ? 'Open app' : 'Get your link'}</button>
         </div>
@@ -404,6 +405,7 @@ export default function Landing() {
             <button onClick={() => scrollTo('how')}>How it works</button>
             <button onClick={() => scrollTo('privacy')}>Privacy</button>
             <button onClick={() => scrollTo('faq')}>FAQ</button>
+            <button onClick={() => go('/bridge')}>PUSD bridge</button>
           </nav>
           <span className="ld-foot-credit">Built for BCH BLAZE 2026</span>
         </div>

@@ -1,5 +1,5 @@
 import type React from 'react'
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ArrowUpRight, History, House, Link2, Wallet } from 'lucide-react'
 import './styles/app.css'
 import { Logo } from './ui'
@@ -11,6 +11,7 @@ import LinkPage from './screens/LinkPage'
 import Send from './screens/Send'
 import Settings from './screens/Settings'
 import Pay from './screens/Pay'
+const Bridge = lazy(() => import('./screens/Bridge'))
 import DemoDashboard from './screens/demo/Dashboard'
 import DemoSend from './screens/demo/Send'
 import DemoTransactions from './screens/demo/Transactions'
@@ -141,7 +142,7 @@ export default function App() {
   const pay = path.match(PAY_PATH)
   const current = path === '/' || path === '/inbox' ? '/dashboard' : path === '/payments' ? '/transactions' : path
   // no account: app routes go through /onboarding, so a claim that writes the vault mid-flow stays on it
-  const toOnboarding = !EMBED && !pay && !stored && !['/', '', '/landing', '/onboarding'].includes(path)
+  const toOnboarding = !EMBED && !pay && !stored && !['/', '', '/landing', '/onboarding', '/bridge'].includes(path)
   useEffect(() => {
     if (toOnboarding) go('/onboarding', { replace: true })
   }, [toOnboarding])
@@ -150,6 +151,9 @@ export default function App() {
   let chrome = true
   if (pay) {
     page = <Pay raw={pay[1]!} step={pay[2] ?? ''} search={search} />
+    chrome = false
+  } else if (path === '/bridge') {
+    page = <Suspense fallback={null}><Bridge /></Suspense>
     chrome = false
   } else if (path === '/landing' || (!user && (path === '/' || path === ''))) {
     page = <Landing />
