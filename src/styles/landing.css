@@ -7,3 +7,6 @@
 .blaze-addr { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; color: rgb(255 255 255 / 0.8); font: inherit; cursor: pointer; }
 .blaze-addr code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46ch; font-size: 12px; color: #fff; }
 @media (max-width: 600px) { .blaze-addr code { max-width: 26ch; } }
+.blaze-modal-p { margin: 0 0 18px; color: var(--ink-11); font-size: 15px; line-height: 1.5; }
+.blaze-modal-qr { margin: 0 auto 18px; max-width: 300px; }
+.blaze-modal-addr .url { font-size: 13px; }

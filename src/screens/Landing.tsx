@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowRight, ArrowUpRight, Check, EyeOff, History, KeyRound, Link2, Plus, QrCode, Repeat, ShieldCheck, Unlink } from 'lucide-react'
 import { CHAINS, type ChainId, type TokenId } from '../data'
-import { Avatar, ChainIcon, TokenIcon } from '../ui'
+import { QRCodeSVG } from 'qrcode.react'
+import { Avatar, ChainIcon, CopyButton, Modal, TokenIcon } from '../ui'
 import { go, useStore } from '../App'
 import { DECK_URL, DEMO_HANDLE, DONATION_ADDRESS, REPO_URL } from '../lib/config'
 import '../styles/landing.css'
@@ -118,18 +120,30 @@ const FAQ = [
 ]
 
 function BlazeBanner() {
-  const [copied, setCopied] = useState(false)
-  const copy = () => navigator.clipboard?.writeText(DONATION_ADDRESS).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1400) }, () => {})
+  const [open, setOpen] = useState(false)
   return (
     <div className="blaze-banner" role="region" aria-label="BCH BLAZE 2026">
       <span className="blaze-tag">BCH BLAZE 2026 entry</span>
       <a href={DECK_URL} target="_blank" rel="noopener">Pitch deck<ArrowUpRight size={14} /></a>
       <a href={REPO_URL} target="_blank" rel="noopener">Source code<ArrowUpRight size={14} /></a>
-      <button className="blaze-addr" onClick={copy} title="Copy CashTokens address">
+      <button className="blaze-addr" onClick={() => setOpen(true)} aria-haspopup="dialog">
         <span>Vote with EMBER2026</span>
         <code>{DONATION_ADDRESS}</code>
-        {copied ? <Check size={14} /> : null}
+        <QrCode size={14} strokeWidth={2.4} />
       </button>
+      {open && createPortal(
+        <Modal title="Vote with EMBER2026" onClose={() => setOpen(false)}>
+          <p className="blaze-modal-p">Send EMBER2026 tokens to this CashTokens address to vote for Unlinked in the BCH BLAZE community choice. Any CashTokens wallet works, like Cashonize, Paytaca or Selene.</p>
+          <div className="qr-halo blaze-modal-qr">
+            <div className="qr-tile qr-wrap"><QRCodeSVG value={DONATION_ADDRESS} size={228} level="M" fgColor="#0b0d14" aria-label="QR code of the CashTokens address" /></div>
+          </div>
+          <div className="link-box blaze-modal-addr">
+            <span className="url mono" title={DONATION_ADDRESS}>{DONATION_ADDRESS}</span>
+            <CopyButton text={DONATION_ADDRESS} label="Copy address" />
+          </div>
+        </Modal>,
+        document.body,
+      )}
     </div>
   )
 }
