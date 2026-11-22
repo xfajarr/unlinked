@@ -44,7 +44,7 @@ const Balance: React.FC = () => {
       right={
         <div style={{ opacity: p, scale: `${interpolate(p, [0, 1], [0.92, 1])}` }}>
           <Shot src="balance.png" width={W} height={H} radius={40}>
-            <Ring left={8.2} top={53.5} w={27.6} h={11} start={70} color={c.green11} />
+            <Ring left={8.2} top={53.5} w={27.6} h={11} start={70} color={c.green11} mode="circle" />
           </Shot>
         </div>
       }

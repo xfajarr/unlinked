@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { TransitionSeries, linearTiming, springTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
@@ -13,6 +13,9 @@ import { End } from "./scenes/End";
 import { c, font } from "./theme";
 
 const T = 20;
+
+// ElevenLabs narration (voice "Brian"), one clip per scene, start in seconds
+const VO: [string, number][] = [["1-hook", 0.8], ["2-onelink", 12], ["3-wizard", 27.5], ["4-private", 61], ["5-chain", 90.2], ["6-hood", 113.5], ["7-end", 137]];
 
 export const SCENES = [
   { name: "Hook", dur: 360, C: Hook },
@@ -50,5 +53,10 @@ export const UnlinkedDemo: React.FC = () => (
         ];
       })}
     </TransitionSeries>
+    {VO.map(([f, sec]) => (
+      <Sequence key={f} from={Math.round(sec * 30)} layout="none">
+        <Audio src={staticFile(`vo/${f}.mp3`)} />
+      </Sequence>
+    ))}
   </AbsoluteFill>
 );

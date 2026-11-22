@@ -245,7 +245,10 @@ export const Shot: React.FC<{
   </div>
 );
 
-/** Pulsing highlight ring placed in % over a screenshot. */
+/**
+ * Marks an element in a screenshot (box in %). "click": a pointer glides in and clicks it once.
+ * "circle": a line draws around it once. Neither repeats, so nothing pulses.
+ */
 export const Ring: React.FC<{
   left: number;
   top: number;
@@ -254,26 +257,81 @@ export const Ring: React.FC<{
   start: number;
   radius?: number;
   color?: string;
-}> = ({ left, top, w, h, start, radius = 999, color = c.blue9 }) => {
+  mode?: "click" | "circle";
+}> = ({ left, top, w, h, start, radius = 999, color = c.blue9, mode = "click" }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const t = frame - start;
-  const appear = interpolate(t, [0, 14], [0, 1], clamp);
-  const pulse = t > 0 ? 1 + 0.04 * Math.sin(t / 6) : 1;
+  if (t < 0) return null;
+  const cx = left + w / 2;
+  const cy = top + h / 2;
+
+  if (mode === "circle") {
+    const draw = interpolate(t, [0, 22], [0, 360], { ...clamp, easing: ease });
+    const mask = `conic-gradient(from -90deg, #000 ${draw}deg, transparent ${draw}deg)`;
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: `${left - 1.4}%`,
+          top: `${top - 2.4}%`,
+          width: `${w + 2.8}%`,
+          height: `${h + 4.8}%`,
+          borderRadius: radius,
+          border: `4px solid ${color}`,
+          WebkitMaskImage: mask,
+          maskImage: mask,
+        }}
+      />
+    );
+  }
+
+  const move = spring({ frame: t, fps, config: { damping: 200 }, durationInFrames: 24 });
+  const x = interpolate(move, [0, 1], [cx + 16, cx]);
+  const y = interpolate(move, [0, 1], [cy + 26, cy]);
+  const appear = interpolate(t, [0, 8], [0, 1], clamp);
+  const press = interpolate(t, [26, 30, 35], [1, 0.8, 1], clamp);
+  const ripple = interpolate(t, [27, 50], [0, 1], { ...clamp, easing: ease });
+  const tipX = (4 / 24) * 48;
+  const tipY = (2 / 24) * 48;
   return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${left}%`,
-        top: `${top}%`,
-        width: `${w}%`,
-        height: `${h}%`,
-        borderRadius: radius,
-        border: `5px solid ${color}`,
-        boxShadow: `0 0 0 10px rgba(37,99,255,0.16)`,
-        opacity: appear,
-        scale: `${interpolate(t, [0, 14], [1.25, 1], { ...clamp, easing: ease }) * pulse}`,
-      }}
-    />
+    <>
+      {t >= 27 && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${cx}%`,
+            top: `${cy}%`,
+            width: 130,
+            height: 130,
+            marginLeft: -65,
+            marginTop: -65,
+            borderRadius: "50%",
+            border: `4px solid ${color}`,
+            opacity: 1 - ripple,
+            scale: `${0.15 + ripple * 0.85}`,
+          }}
+        />
+      )}
+      <svg
+        viewBox="0 0 24 24"
+        style={{
+          position: "absolute",
+          left: `${x}%`,
+          top: `${y}%`,
+          width: 48,
+          height: 48,
+          marginLeft: -tipX,
+          marginTop: -tipY,
+          opacity: appear,
+          transform: `scale(${press})`,
+          transformOrigin: `${tipX}px ${tipY}px`,
+          filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.35))",
+        }}
+      >
+        <path d="M4 2 L4 19 L8.6 14.6 L11.6 21.4 L14.4 20.2 L11.4 13.6 L18 13.6 Z" fill="#fff" stroke="#0b0d14" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    </>
   );
 };
 
