@@ -1,0 +1,10 @@
+{
+  "name": "@unlinked/shield-tx",
+  "private": true,
+  "type": "module",
+  "description": "Browser-portable Unlinked Shield transaction builder (no node APIs). Lazy-import it.",
+  "main": "src/index.mjs",
+  "exports": { ".": "./src/index.mjs" },
+  "scripts": { "test": "node --test --test-concurrency=1 test/*.test.mjs" },
+  "peerDependencies": { "@bitauth/libauth": ">=3.0.0", "@noble/curves": "^2.0.1", "@noble/hashes": "^2.0.1" }
+}
