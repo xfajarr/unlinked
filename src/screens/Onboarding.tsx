@@ -49,7 +49,7 @@ function PasswordFields({ pw, pw2, onPw, onPw2, onEnter }: { pw: string; pw2: st
 
 export default function Onboarding() {
   const { stored } = useVault()
-  const restoring = new URLSearchParams(window.location.hash.split('?')[1] ?? '').has('restore')
+  const restoring = new URLSearchParams(window.location.search).has('restore')
   const [step, setStep] = useState<Step>(restoring ? 'restore' : 'welcome')
   const [handle, setHandle] = useState('')
   const [status, setStatus] = useHandleStatus(handle)

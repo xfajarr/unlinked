@@ -11,7 +11,7 @@ import { CHAINS, TOKENS, type ChainId, type TokenId } from './data'
 
 export function Logo() {
   return (
-    <a href="#/dashboard" className="logo" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <a href="/dashboard" className="logo" style={{ textDecoration: 'none', color: 'inherit' }}>
       <span className="logo-mark"><Unlink size={18} strokeWidth={2.4} /></span>
       unlinked
     </a>

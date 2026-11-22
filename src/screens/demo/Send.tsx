@@ -15,7 +15,7 @@ const shortAddr = (a: string) => `${a.replace('bitcoincash:', '').slice(0, 6)}â€
 export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) {
   const withdraw = mode === 'withdraw'
   const total = PAYMENTS.reduce((s, p) => s + p.bch, 0)
-  const [to, setTo] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('to') ?? '')
+  const [to, setTo] = useState(() => new URLSearchParams(window.location.search).get('to') ?? '')
   const [amountStr, setAmountStr] = useState('')
   const [pasteErr, setPasteErr] = useState(false)
   const priv = true // sends are always split into separate payments
@@ -159,7 +159,7 @@ export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) 
               <p className="page-sub" style={{ margin: '4px 0 6px' }}>
                 {fmtBch(amount)} BCH is on its way to {isHandle ? t.toLowerCase() : saved ? `your ${saved.name} wallet` : withdraw ? 'your wallet' : 'that address'}.
               </p>
-              <a className="text-link" href="#/transactions">View transaction<ChevronRight size={16} strokeWidth={2.4} /></a>
+              <a className="text-link" href="/transactions">View transaction<ChevronRight size={16} strokeWidth={2.4} /></a>
               <button className="btn btn-primary block" style={{ marginTop: 24 }} onClick={() => go('/dashboard')}>Back to home</button>
             </div>
           ) : (

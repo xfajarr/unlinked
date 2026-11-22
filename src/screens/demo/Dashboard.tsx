@@ -115,7 +115,7 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="center" style={{ marginTop: 14 }}>
-            <a className="text-link" href={`#/transactions?token=${tok.token}`}>See all in Activity<ChevronRight size={16} strokeWidth={2.4} /></a>
+            <a className="text-link" href={`/transactions?token=${tok.token}`}>See all in Activity<ChevronRight size={16} strokeWidth={2.4} /></a>
           </div>
         </Modal>
       )}

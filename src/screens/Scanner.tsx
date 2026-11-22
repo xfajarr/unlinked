@@ -13,7 +13,12 @@ function handleFrom(t: string): string | null {
     return null
   }
   if (u.host !== APP_HOST && u.host !== location.host) return null
-  return u.hash.match(/^#\/pay\/@?([a-z0-9_]{3,20})(?:[?/]|$)/i)?.[1] ?? u.pathname.match(/^\/@?([a-z0-9_]{3,20})\/?$/i)?.[1] ?? null
+  let path = u.pathname
+  try {
+    path = decodeURIComponent(path)
+  } catch { /* keep it encoded */ }
+  // a bare /name is an app route, not a pay link
+  return u.hash.match(/^#\/pay\/@?([a-z0-9_]{3,20})(?:[?/]|$)/i)?.[1] ?? path.match(/^\/(?:@|pay\/@?)([a-z0-9_]{3,20})(?:\/[a-z]*)?\/?$/i)?.[1] ?? null
 }
 
 export function routeFromScan(raw: string): string | null {

@@ -88,7 +88,7 @@ function Phone({ route, className = '' }: { route: string; className?: string })
       <span className="ld-btn-l b1" /><span className="ld-btn-l b2" /><span className="ld-btn-l b3" /><span className="ld-btn-r" />
       <div className="ld-phone-screen">
         <span className="ld-island" />
-        <iframe src={`/?embed=1#${route}`} title="Unlinked app preview" tabIndex={-1} />
+        <iframe src={`${route}?embed=1`} title="Unlinked app preview" tabIndex={-1} />
       </div>
     </div>
   )
@@ -204,7 +204,7 @@ export default function Landing() {
       <BlazeBanner />
       <header className={`ld-nav${scrolled ? ' scrolled' : ''}`}>
         <div className="ld-nav-in">
-        <a className="logo" href="#/landing" style={{ textDecoration: 'none', color: 'inherit' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+        <a className="logo" href="/landing" style={{ textDecoration: 'none', color: 'inherit' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
           <span className="logo-mark"><Unlink size={18} strokeWidth={2.4} /></span>unlinked
         </a>
         <nav className="ld-links" aria-label="Sections">
@@ -236,7 +236,7 @@ export default function Landing() {
           <p className="ld-lead">One link, any token. Every payment lands privately as BCH.</p>
           <div className="ld-ctas">
             <button className="btn ld-btn-white" onClick={start}>{user ? 'Open app' : 'Claim your link'}<ArrowRight size={18} strokeWidth={2.4} /></button>
-            {DEMO_HANDLE && <button className="btn ld-btn-glass" onClick={() => go(`/pay/${DEMO_HANDLE}`)}>See a pay page</button>}
+            {DEMO_HANDLE && <button className="btn ld-btn-glass" onClick={() => go(`/@${DEMO_HANDLE}`)}>See a pay page</button>}
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export default function Landing() {
               <span className="ld-btn-l b1" /><span className="ld-btn-l b2" /><span className="ld-btn-l b3" /><span className="ld-btn-r" />
               <div className="ld-phone-screen">
                 <span className="ld-island" />
-                <iframe src="/?embed=1#/dashboard" title="Unlinked app preview" tabIndex={-1} />
+                <iframe src="/dashboard?embed=1" title="Unlinked app preview" tabIndex={-1} />
               </div>
             </div>
           </div>

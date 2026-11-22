@@ -29,7 +29,7 @@ const satsStr = (sats: number) => (sats / 1e8).toFixed(8).replace(/\.?0+$/, '')
 export default function Send({ mode = 'send' }: { mode?: 'send' | 'withdraw' }) {
   const isWithdraw = mode === 'withdraw'
   const { stored, items, shield, price, history, refreshSoon } = useAccount()
-  const [to, setTo] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('to') ?? '')
+  const [to, setTo] = useState(() => new URLSearchParams(window.location.search).get('to') ?? '')
   const [amountStr, setAmountStr] = useState('')
   const [pasteErr, setPasteErr] = useState(false)
   const [phase, setPhase] = useState<'form' | 'confirm' | 'sending' | 'done'>('form')

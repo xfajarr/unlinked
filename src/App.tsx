@@ -29,20 +29,46 @@ export const EMBED = new URLSearchParams(window.location.search).has('embed')
 const EMBED_USER: User = { handle: 'ava' }
 if (EMBED) document.documentElement.classList.add('embed')
 
-function useHash() {
-  const [hash, setHash] = useState(() => window.location.hash.slice(1) || '/')
-  useEffect(() => {
-    const f = () => {
-      setHash(window.location.hash.slice(1) || '/')
-      window.scrollTo(0, 0)
-    }
-    window.addEventListener('hashchange', f)
-    return () => window.removeEventListener('hashchange', f)
-  }, [])
-  return hash
+const here = () => window.location.pathname + window.location.search
+const listeners = new Set<() => void>()
+
+/** History API navigation. `state` rides on the new entry (the pay flow uses it to tell its own steps apart). */
+export function go(path: string, opts: { replace?: boolean; state?: unknown } = {}) {
+  if (path === here() && !opts.replace) return
+  // the landing phones are iframes: their clicks must not add entries to the page's Back history
+  history[opts.replace || EMBED ? 'replaceState' : 'pushState'](opts.state ?? null, '', path)
+  listeners.forEach((f) => f())
 }
 
-export const go = (path: string) => (window.location.hash = path)
+function useRoute() {
+  const [route, setRoute] = useState(here)
+  useEffect(() => {
+    const f = () => {
+      setRoute(here())
+      window.scrollTo(0, 0)
+    }
+    listeners.add(f)
+    window.addEventListener('popstate', f)
+    // same-origin <a href="/..."> links navigate in place, so a click never reloads the page (and drops unlocked keys)
+    const click = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a')
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      if ((a.target && a.target !== '_self') || a.hasAttribute('download') || a.origin !== location.origin) return
+      e.preventDefault()
+      go(a.pathname + a.search)
+    }
+    document.addEventListener('click', click)
+    return () => {
+      listeners.delete(f)
+      window.removeEventListener('popstate', f)
+      document.removeEventListener('click', click)
+    }
+  }, [])
+  return route
+}
+
+// /@handle, /@handle/qr and the other pay steps
+const PAY_PATH = /^\/@([^/]+)(?:\/([^/]*))?\/?$/
 
 const NAV = [
   { path: '/dashboard', label: 'Home', short: 'Home', icon: House },
@@ -107,23 +133,23 @@ function Tabs({ active }: { active: string }) {
 }
 
 export default function App() {
-  const hash = useHash()
+  const route = useRoute()
   const { stored, keys } = useVault()
   const user = EMBED ? EMBED_USER : stored ? { handle: stored.handle } : null
 
-  const path = hash.startsWith('/pay/') ? hash : hash.split('?')[0]
+  const [path = '/', search = ''] = route.split('?')
+  const pay = path.match(PAY_PATH)
   const current = path === '/' || path === '/inbox' ? '/dashboard' : path === '/payments' ? '/transactions' : path
-  const paying = hash.startsWith('/pay/')
   // no account: app routes go through /onboarding, so a claim that writes the vault mid-flow stays on it
-  const toOnboarding = !EMBED && !paying && !stored && !['/', '', '/landing', '/onboarding'].includes(path)
+  const toOnboarding = !EMBED && !pay && !stored && !['/', '', '/landing', '/onboarding'].includes(path)
   useEffect(() => {
-    if (toOnboarding) go('/onboarding')
+    if (toOnboarding) go('/onboarding', { replace: true })
   }, [toOnboarding])
 
   let page: React.ReactNode
   let chrome = true
-  if (paying) {
-    page = <Pay raw={hash.slice(5)} />
+  if (pay) {
+    page = <Pay raw={pay[1]!} step={pay[2] ?? ''} search={search} />
     chrome = false
   } else if (path === '/landing' || (!user && (path === '/' || path === ''))) {
     page = <Landing />
@@ -136,17 +162,17 @@ export default function App() {
     chrome = false
   } else if (EMBED) {
     page =
-      path === '/send' ? <DemoSend key={'send' + hash} /> :
-      path === '/withdraw' ? <DemoSend key={'withdraw' + hash} mode="withdraw" /> :
-      path === '/transactions' || path === '/payments' ? <DemoTransactions key={hash} /> :
+      path === '/send' ? <DemoSend key={'send' + route} /> :
+      path === '/withdraw' ? <DemoSend key={'withdraw' + route} mode="withdraw" /> :
+      path === '/transactions' || path === '/payments' ? <DemoTransactions key={route} /> :
       <DemoDashboard />
   } else {
     page =
       path === '/link' ? <LinkPage /> :
-      path === '/send' ? <Send key={'send' + hash} /> :
-      path === '/withdraw' ? <Send key={'withdraw' + hash} mode="withdraw" /> :
+      path === '/send' ? <Send key={'send' + route} /> :
+      path === '/withdraw' ? <Send key={'withdraw' + route} mode="withdraw" /> :
       path === '/settings' ? <Settings /> :
-      path === '/transactions' || path === '/payments' ? <Transactions key={hash} /> :
+      path === '/transactions' || path === '/payments' ? <Transactions key={route} /> :
       <Dashboard />
   }
 

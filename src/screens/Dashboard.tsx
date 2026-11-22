@@ -115,7 +115,7 @@ export default function Dashboard() {
         <section className="panel">
           <div className="hstack" style={{ justifyContent: 'space-between', marginBottom: 4 }}>
             <h2 className="bc-title">Incoming</h2>
-            {recent.length > 0 && <a className="text-link" href="#/transactions">See all<ChevronRight size={16} strokeWidth={2.4} /></a>}
+            {recent.length > 0 && <a className="text-link" href="/transactions">See all<ChevronRight size={16} strokeWidth={2.4} /></a>}
           </div>
           {error && (
             <div className="ap-inline-err">

@@ -19,7 +19,7 @@ function dayLabel(key: number) {
 }
 
 export default function Transactions() {
-  const [token, setToken] = useState<TokenId | 'all'>(() => (new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('token') as TokenId | null) ?? 'all')
+  const [token, setToken] = useState<TokenId | 'all'>(() => (new URLSearchParams(window.location.search).get('token') as TokenId | null) ?? 'all')
   const [q, setQ] = useState('')
   const [page, setPage] = useState(0)
   const [open, setOpen] = useState<Payment | null>(null)
