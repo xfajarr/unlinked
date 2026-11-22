@@ -1,0 +1,594 @@
+{
+ "key": "stand-in (TEST ONLY, free statement)",
+ "verifier": {
+  "lockHex": "aa20056eb038b500d3dde65be9d6bb49b1a053aeafb42528861d9baadd6f3caae72a87",
+  "codeBytes": 7344,
+  "codeSha256": "6893454f7f5d7039085ecab92cc16282a7476fefe4f1550481d4714db741d7a7",
+  "redeemBytes": 65
+ },
+ "pool": {
+  "lockHex": "aa20c2b2e51240b990d9612d2e6957624a5c25ef4f43ac065b4ea5e31f391e50cd2b87",
+  "redeemBytes": 540,
+  "address": "bchtest:p0pt9egjgzuepktp95hxj4mzffwztm60gwkqvk6w5h337wg72rxjkhexn69qh"
+ },
+ "valid": [
+  {
+   "label": "genesis",
+   "txBytes": 428,
+   "minerFee": "1000",
+   "satPerByte": 2.336,
+   "verdict": {
+    "consensus": true,
+    "standard": true
+   },
+   "inputs": [
+    {
+     "input": 0,
+     "unlockingBytes": 100,
+     "lockingBytes": 25,
+     "opStandard": 28025,
+     "opConsensus": 27257,
+     "budget": 112800,
+     "marginPct": 75.16,
+     "accepted": true,
+     "error": null
+    }
+   ]
+  },
+  {
+   "label": "deposit",
+   "txBytes": 28655,
+   "minerFee": "30000",
+   "satPerByte": 1.047,
+   "verdict": {
+    "consensus": true,
+    "standard": true
+   },
+   "inputs": [
+    {
+     "input": 0,
+     "unlockingBytes": 9333,
+     "lockingBytes": 35,
+     "opStandard": 7048051,
+     "opConsensus": 7014003,
+     "budget": 7499200,
+     "marginPct": 6.02,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 1,
+     "unlockingBytes": 9272,
+     "lockingBytes": 35,
+     "opStandard": 7002604,
+     "opConsensus": 6968556,
+     "budget": 7450400,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 2,
+     "unlockingBytes": 8672,
+     "lockingBytes": 35,
+     "opStandard": 6551352,
+     "opConsensus": 6518712,
+     "budget": 6970400,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 3,
+     "unlockingBytes": 778,
+     "lockingBytes": 35,
+     "opStandard": 79815,
+     "opConsensus": 77767,
+     "budget": 655200,
+     "marginPct": 87.82,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 4,
+     "unlockingBytes": 100,
+     "lockingBytes": 25,
+     "opStandard": 28025,
+     "opConsensus": 27257,
+     "budget": 112800,
+     "marginPct": 75.16,
+     "accepted": true,
+     "error": null
+    }
+   ],
+   "fills": [
+    96,
+    34,
+    329
+   ],
+   "ms": {
+    "prove": 267,
+    "witness": 184,
+    "size": 321
+   }
+  },
+  {
+   "label": "transfer",
+   "txBytes": 28548,
+   "minerFee": "30000",
+   "satPerByte": 1.051,
+   "verdict": {
+    "consensus": true,
+    "standard": true
+   },
+   "inputs": [
+    {
+     "input": 0,
+     "unlockingBytes": 9358,
+     "lockingBytes": 35,
+     "opStandard": 7067647,
+     "opConsensus": 7033471,
+     "budget": 7519200,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 1,
+     "unlockingBytes": 9256,
+     "lockingBytes": 35,
+     "opStandard": 6989471,
+     "opConsensus": 6955295,
+     "budget": 7437600,
+     "marginPct": 6.03,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 2,
+     "unlockingBytes": 8731,
+     "lockingBytes": 35,
+     "opStandard": 6596004,
+     "opConsensus": 6563236,
+     "budget": 7017600,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 3,
+     "unlockingBytes": 778,
+     "lockingBytes": 35,
+     "opStandard": 83892,
+     "opConsensus": 81844,
+     "budget": 655200,
+     "marginPct": 87.2,
+     "accepted": true,
+     "error": null
+    }
+   ],
+   "fills": [
+    121,
+    18,
+    197
+   ],
+   "ms": {
+    "prove": 56,
+    "witness": 180,
+    "size": 319
+   }
+  },
+  {
+   "label": "withdraw",
+   "txBytes": 28615,
+   "minerFee": "30000",
+   "satPerByte": 1.048,
+   "verdict": {
+    "consensus": true,
+    "standard": true
+   },
+   "inputs": [
+    {
+     "input": 0,
+     "unlockingBytes": 9334,
+     "lockingBytes": 35,
+     "opStandard": 7049545,
+     "opConsensus": 7015369,
+     "budget": 7500000,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 1,
+     "unlockingBytes": 9256,
+     "lockingBytes": 35,
+     "opStandard": 6990913,
+     "opConsensus": 6956737,
+     "budget": 7437600,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 2,
+     "unlockingBytes": 8763,
+     "lockingBytes": 35,
+     "opStandard": 6620021,
+     "opConsensus": 6587253,
+     "budget": 7043200,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 3,
+     "unlockingBytes": 803,
+     "lockingBytes": 35,
+     "opStandard": 85493,
+     "opConsensus": 83317,
+     "budget": 675200,
+     "marginPct": 87.34,
+     "accepted": true,
+     "error": null
+    }
+   ],
+   "fills": [
+    97,
+    18,
+    133
+   ],
+   "ms": {
+    "prove": 51,
+    "witness": 181,
+    "size": 240
+   }
+  },
+  {
+   "label": "control: withdraw with fee = MAX_FEE",
+   "txBytes": 28619,
+   "minerFee": "50000",
+   "satPerByte": 1.747,
+   "verdict": {
+    "consensus": true,
+    "standard": true
+   },
+   "inputs": [
+    {
+     "input": 0,
+     "unlockingBytes": 9351,
+     "lockingBytes": 35,
+     "opStandard": 7061427,
+     "opConsensus": 7027251,
+     "budget": 7513600,
+     "marginPct": 6.02,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 1,
+     "unlockingBytes": 9264,
+     "lockingBytes": 35,
+     "opStandard": 6996331,
+     "opConsensus": 6962155,
+     "budget": 7444000,
+     "marginPct": 6.01,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 2,
+     "unlockingBytes": 8742,
+     "lockingBytes": 35,
+     "opStandard": 6603637,
+     "opConsensus": 6570869,
+     "budget": 7026400,
+     "marginPct": 6.02,
+     "accepted": true,
+     "error": null
+    },
+    {
+     "input": 3,
+     "unlockingBytes": 803,
+     "lockingBytes": 35,
+     "opStandard": 85455,
+     "opConsensus": 83279,
+     "budget": 675200,
+     "marginPct": 87.34,
+     "accepted": true,
+     "error": null
+    }
+   ]
+  }
+ ],
+ "rejects": [
+  {
+   "label": "payload S1 tampered (output 0 commitment)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload C'0 tampered",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload C'1 tampered",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload N0 tampered",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload N1 tampered",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload extData tampered (ct1 byte)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payload extData tampered (recipient swapped, output 1 follows)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "NFT commitment not updated (output 0 keeps S0)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "pool value != old + publicAmount (withdraw, pool keeps 1 sat more)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:57 require(0 - publicAmount == payout + fee);"
+  },
+  {
+   "label": "pool value != old + publicAmount (deposit, pool gets 1 sat less, change +1)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "payout to another lock",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:62 require(tx.outputs[1].lockingBytecode == recipientLock);"
+  },
+  {
+   "label": "payout 1 sat short",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:63 require(tx.outputs[1].value == payout);"
+  },
+  {
+   "label": "payout 1,000 sat over (taken from the fee)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:63 require(tx.outputs[1].value == payout);"
+  },
+  {
+   "label": "extra output skimming 1,000 sat of the fee",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:74 require(tx.outputs.length == v + 3);"
+  },
+  {
+   "label": "extra output on a transfer",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:74 require(tx.outputs.length == v + 3);"
+  },
+  {
+   "label": "verifier coin not recreated (output to another lock)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:70 require(tx.outputs[v + 2].lockingBytecode == verifierLock);"
+  },
+  {
+   "label": "verifier coin recreated 1 sat short",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:69 require(tx.outputs[v + 1].value == tx.inputs[1].value);"
+  },
+  {
+   "label": "verifier coins not recreated at all (transfer, outputs dropped)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program attempted to read from an invalid transaction output index. Transaction output count: 1; requested index: 1.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program attempted to read from an invalid transaction output index. Transaction output count: 1; requested index: 1.",
+   "failingInput": 3,
+   "guard": "pool: Program attempted to read from an invalid transaction output index. Transaction output count: 1; requested index: 1."
+  },
+  {
+   "label": "NFT category swapped (fresh genesis category from the pool outpoint)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:36 require(tx.outputs[0].tokenCategory == poolToken);"
+  },
+  {
+   "label": "NFT capability downgraded to immutable",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:36 require(tx.outputs[0].tokenCategory == poolToken);"
+  },
+  {
+   "label": "NFT moved off the pool lock (output 0 to another P2SH32)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:35 require(tx.outputs[0].lockingBytecode == tx.inputs[3].lockingBytecode);"
+  },
+  {
+   "label": "verifier inputs at the wrong lock (drop-all P2SH32 coins, same STMT bytes)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:24 require(tx.inputs[0].lockingBytecode == verifierLock);"
+  },
+  {
+   "label": "verifier inputs missing (pool alone at input 0)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "failingInput": 0,
+   "guard": "ShieldPool.scash:22 require(this.activeInputIndex == 3);"
+  },
+  {
+   "label": "fake pool coin without the NFT (same lock, no token in or out)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:23 require(tx.inputs[3].tokenCategory == poolToken);"
+  },
+  {
+   "label": "verifier coins spent without the pool (input 3 is a P2PKH coin)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 0: Program failed an OP_VERIFY operation.",
+   "failingInput": 0,
+   "guard": "verifier input 0: Program failed an OP_VERIFY operation."
+  },
+  {
+   "label": "stale proof replayed (withdraw proof on the next state: wrong S0)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:32 require(ns.split(32)[0].reverse() == tx.inputs[3].nftCommitment);"
+  },
+  {
+   "label": "wrong S0 (valid proof for another state)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:32 require(ns.split(32)[0].reverse() == tx.inputs[3].nftCommitment);"
+  },
+  {
+   "label": "payload publicAmount tampered (proof binds publicAmount + 1)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:86 require(ns.split(32)[1].reverse() == hm);"
+  },
+  {
+   "label": "fee over the cap (50,001 sat, honest binding)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:58 require(fee <= 50000);"
+  },
+  {
+   "label": "deposit claiming a payout (honest binding)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:54 require(payout == 0);"
+  },
+  {
+   "label": "deposit claiming a fee (honest binding)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:55 require(fee == 0);"
+  },
+  {
+   "label": "withdraw where payout + fee != -publicAmount (honest binding)",
+   "rejectedConsensus": true,
+   "rejectedStandard": true,
+   "consensus": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "standard": "Unable to verify transaction: error in evaluating input index 3: Program failed an OP_VERIFY operation.",
+   "failingInput": 3,
+   "guard": "ShieldPool.scash:57 require(0 - publicAmount == payout + fee);"
+  }
+ ]
+}

@@ -1,0 +1,85 @@
+pragma solidcash ^0.51.0;
+
+// Unlinked Shield pool coin (spec section 9). One P2SH32 coin holds all shielded BCH plus the pool's mutable NFT,
+// whose 32-byte commitment is the state hash S = Poseidon(Rc, n, Rn) (big-endian field element).
+//
+// Transaction layout (fixed):
+//   inputs   0, 1, 2  the Groth16 verifier coins (bn-native-sound roles 0..2; the role is the input index)
+//            3        this pool coin
+//            4..      depositor's funding inputs (deposits only; harmless otherwise)
+//   outputs  0        the pool coin again: same lock, same category, mutable, commitment S1, value old + publicAmount
+//            1        the payout to recipientLock, only when payout > 0
+//            v..v+2   the verifier coins recreated (v = 2 with a payout, else 1)
+//            v+3..    deposits only: the depositor's change
+//
+// verifierLock is the verifiers' P2SH32 locking bytecode (35 B). poolToken is the pool's category in
+// introspection byte order followed by 0x01 (mutable): exactly what OP_UTXOTOKENCATEGORY pushes for the pool coin.
+contract ShieldPool(bytes verifierLock, bytes poolToken) {
+    // c0, c1: output commitments C'0, C'1; nf0, nf1: nullifiers N0, N1 (32-byte big-endian field elements).
+    // extData = len (1 B) ‖ recipientLock (len ≤ 201 B) ‖ payout (u64 BE) ‖ fee (u64 BE) ‖ ct0 (42 B) ‖ ct1 (42 B).
+    function transact(bytes32 c0, bytes32 c1, bytes32 nf0, bytes32 nf1, bytes extData) {
+        // the pool coin and the three verifier coins, at their fixed indices
+        require(this.activeInputIndex == 3);
+        require(tx.inputs[3].tokenCategory == poolToken);
+        require(tx.inputs[0].lockingBytecode == verifierLock);
+        require(tx.inputs[1].lockingBytecode == verifierLock);
+        require(tx.inputs[2].lockingBytecode == verifierLock);
+
+        // the verifier's statement: STMT words n0 (offset 256) and n1 (offset 288) of input 2's STMT push, which
+        // starts at byte 101 of its unlocking bytecode; 32-byte little-endian, so reversed to big-endian here.
+        // The verifier pins its own layout, so these bytes are exactly the n0, n1 that the proof is checked against.
+        bytes ns = tx.inputs[2].unlockingBytecode.slice(357, 421);
+        require(ns.split(32)[0].reverse() == tx.inputs[3].nftCommitment);
+
+        require(tx.outputs[0].lockingBytecode == tx.inputs[3].lockingBytecode);
+        require(tx.outputs[0].tokenCategory == poolToken);
+        require(tx.outputs[0].tokenAmount == 0);
+        bytes s1 = tx.outputs[0].nftCommitment;
+        require(s1.length == 32);
+        int publicAmount = tx.outputs[0].value - tx.inputs[3].value;
+
+        int lockLen = int(extData.split(1)[0] + 0x00);
+        require(lockLen <= 201);
+        require(extData.length == lockLen + 101);
+        bytes recipientLock = extData.slice(1, lockLen + 1);
+        bytes amounts = extData.slice(lockLen + 1, lockLen + 17);
+        int payout = int(amounts.split(8)[0].reverse() + 0x00);
+        int fee = int(amounts.split(8)[1].reverse() + 0x00);
+
+        if (publicAmount > 0) {
+            // deposit: the depositor pays the miner from their own inputs
+            require(payout == 0);
+            require(fee == 0);
+        } else {
+            require(0 - publicAmount == payout + fee);
+            require(fee <= 50000);
+        }
+        int v = 1;
+        if (payout > 0) {
+            require(tx.outputs[1].lockingBytecode == recipientLock);
+            require(tx.outputs[1].value == payout);
+            v = 2;
+        }
+        require(tx.outputs[v].lockingBytecode == verifierLock);
+        require(tx.outputs[v].value == tx.inputs[0].value);
+        require(tx.outputs[v + 1].lockingBytecode == verifierLock);
+        require(tx.outputs[v + 1].value == tx.inputs[1].value);
+        require(tx.outputs[v + 2].lockingBytecode == verifierLock);
+        require(tx.outputs[v + 2].value == tx.inputs[2].value);
+        if (publicAmount < 0) {
+            // the pool pays: no other output may exist (it could only take value from the pool's fee)
+            require(tx.outputs.length == v + 3);
+        }
+
+        // binding hash H (spec section 7): payload = S1 ‖ publicAmount (i64 BE two's complement) ‖ C'0 ‖ C'1 ‖ N0 ‖ N1
+        // ‖ sha256(extData); H = sha256(payload) with its top 3 bits cleared; the verifier's n1 must equal H.
+        int twos = publicAmount;
+        if (publicAmount < 0) {
+            twos = publicAmount + 18446744073709551616;
+        }
+        bytes amountBE = toPaddedBytes(twos, 9).split(8)[0].reverse();
+        bytes h = sha256(s1 + amountBE + c0 + c1 + nf0 + nf1 + sha256(extData));
+        bytes hm = (h.split(1)[0] & 0x1f) + h.split(1)[1];
+        require(ns.split(32)[1].reverse() == hm);
+    }
+}

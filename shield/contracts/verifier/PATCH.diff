@@ -1,0 +1,21 @@
+--- a/chunked/bn254/bn-native-sound/script.mjs (mr-zwets/groth16_cashscript @ 4571af9)
++++ b/chunked/bn254/bn-native-sound/script.mjs (vendored)
+@@ -12,6 +12,10 @@
+ // name). Default null: the program is byte-identical to the reviewed build.
+ let COVENANT = null;
+ export const setCovenant = (fn) => { COVENANT = fn; };
++// Unlinked Shield: optional replacement of the GRAPH function body (the only change against upstream 4571af9).
++// Default null: the reviewed GRAPH, byte-identical build. See shield/contracts/verifier/PATCH.md.
++let GRAPH_HOOK = null;
++export const setGraph = (fn) => { GRAPH_HOOK = fn; };
+ export const IX = {INPUTINDEX: 0xc0, TXINPUTCOUNT: 0xc3, UTXOBYTECODE: 0xc7, INPUTBYTECODE: 0xca};
+ const ITERS = Number(process.env.SCHED_ITERS ?? 4000);
+ const D_PIECE = 8; // delta slopes per pile piece (512 B)
+@@ -76,6 +80,7 @@
+     .push(0, 'z0').pick('fs', 'c').op(OP.NUM2BIN, 2, 'zz').roll('in0').op(OP.EQUALVERIFY, 2).invoke('PLEN', ['len']); });
+   // GRAPH: exactly NROLES inputs, every spent output has this input's locking bytecode
+   a.defLocal('GRAPH', 0, 0, (s) => {
++    if (GRAPH_HOOK) return GRAPH_HOOK(s, {IX, NROLES, OP});
+     s.emit(IX.TXINPUTCOUNT); s.st.push('n'); s.push(NROLES).op(OP.NUMEQUALVERIFY, 2);
+     s.emit(IX.INPUTINDEX); s.st.push('ix'); s.op(IX.UTXOBYTECODE, 1, 'mine');
+     for (let j = 0; j < NROLES; j++) { s.push(j).op(IX.UTXOBYTECODE, 1, 'u'); (j < NROLES - 1 ? s.pick('mine') : s.roll('mine')); s.op(OP.EQUALVERIFY, 2); }
