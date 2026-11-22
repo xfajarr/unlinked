@@ -60,7 +60,7 @@ flowchart LR
 ```
 
 1. You claim a handle. The app creates your keys in the browser, locks them with a PIN and gives you a 12-word backup. Our server keeps your handle and public keys. It never sees your private keys and never learns who paid you.
-2. A payer opens your link. Their browser derives a one-time address from your public keys with ECDH on secp256k1 (the same idea as ERC-5564 stealth addresses) and pays it. The only extra data it publishes is an ephemeral public key and a one-byte view tag, in an `UNLK` OP_RETURN and on our announcement board. Neither one contains your handle.
+2. A payer opens your link. Their browser derives a one-time address from your public keys with ECDH on secp256k1 (the same idea as ERC-5564 stealth addresses) and pays it. The only extra data it publishes is an ephemeral public key and a one-byte view tag, on our announcement board and, when the page builds the transaction (WizardConnect), in an `UNLK` OP_RETURN. Neither one contains your handle.
 3. Your app scans those announcements with your scan key, picks out the payments meant for you, and can spend them with your spend key.
 4. By default the app then shields each payment. It builds a Groth16 proof in a Web Worker and deposits into the pool, and BCH Script checks the proof on mainnet. From the private balance you can pay another `@handle` or withdraw to any BCH address. A private transfer hides sender, receiver and amount, and a withdraw doesn't show which deposit the coins came from.
 
@@ -74,7 +74,7 @@ In the app you get one balance in USD, split into private (in the pool) and arri
 
 ## Stablecoin bridge
 
-[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves stablecoins and other tokens between 37 chains and Bitcoin Cash, in both directions, with no account. The token picker lists every chain and token the app supports through NEAR Intents. On the BCH side you can pick PUSD (ParyonUSD), MUSD (Moria USD) or plain BCH. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and the BCH stablecoin.
+[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves stablecoins and other tokens between 36 chains and Bitcoin Cash, in both directions, with no account. The token picker lists every chain and token the app supports through NEAR Intents. On the BCH side you can pick PUSD (ParyonUSD), MUSD (Moria USD) or plain BCH. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and the BCH stablecoin.
 
 ```mermaid
 flowchart LR
@@ -89,7 +89,7 @@ flowchart LR
 
 The page shows the price from a live NEAR quote and the live Cauldron pools before you send anything. In a test on 22 Nov 2026, 5 USDC on Base quoted at about 4.93 PUSD, 4.91 MUSD or 0.02504 BCH, and 5 PUSD quoted at about 4.979 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`, with wallets in `src/lib/wallet.ts` and `src/lib/evm.ts`.
 
-Wallets: on the BCH side, WizardConnect pairs a wallet such as Cashonize, Selene or Paytaca to fill in your address and to sign the PUSD, MUSD or BCH send. On EVM chains (Ethereum, Base, Arbitrum, BNB Chain, Optimism, Polygon, Avalanche, Gnosis, Scroll), a browser wallet such as MetaMask or Rabby, or any WalletConnect wallet by QR code, sends the USDC or USDT transfer to the NEAR deposit address and the page tells NEAR about it right away. Solana, Tron and other chains use the deposit address and QR code.
+Wallets: on the BCH side, WizardConnect pairs your BCH wallet (we tested Cashonize) to fill in your address and to sign the PUSD, MUSD or BCH send. On EVM chains (Ethereum, Base, Arbitrum, BNB Chain, Optimism, Polygon, Avalanche, Gnosis, Scroll), a browser wallet such as MetaMask or Rabby, or any WalletConnect wallet by QR code, sends the USDC or USDT transfer to the NEAR deposit address and the page tells NEAR about it right away. Solana, Tron and other chains use the deposit address and QR code.
 
 ## Screens
 
@@ -141,7 +141,7 @@ The proof system is a Groth16 (BN254) 2-in-2-out join-split. Notes are Poseidon 
 | Circuit | `shield/circuits/transact.circom` | 183,095 constraints. Public inputs are `[S_old, H]`, where `H` binds the new state, the commitments, the nullifiers, the public amount and the recipient data byte for byte. |
 | Pool covenant | `shield/contracts/ShieldPool.scash` | Written in SolidCash. It checks the verifier statement, recreates the pool with the new state and enforces payout and fee. |
 | Proof verifier | `shield/contracts/verifier/` | Groth16 verification in BCH Script, three verifier inputs per transaction, built from mr-zwets' `groth16_cashscript` (`chunked/bn254/bn-native-sound`). We added a 34-byte patch that binds the verifier coins to one pool (`shield/contracts/verifier/PATCH.md`). |
-| Client | `src/lib/shield/` | Proofs are made in the browser in a Web Worker, in 8 to 23 s. Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance. |
+| Client | `src/lib/shield/` | Proofs are made in the browser in a Web Worker, in 12 to 23 s on a laptop (the first proof in a tab is the slowest). Incoming payments are shielded automatically. Sending to `@handle` and withdrawing both spend from the shielded balance. |
 | Tests | `shield/contracts/test/solidhat/` | A SolidHat suite of 20 tests (`npm run test:solidhat`): genesis, deposit, transfer and withdraw with real proofs on SolidHat's mock network, plus 11 transactions rejected at the exact `require`. |
 
 A pool transaction is about 31 kB, so the fee is about 32,000 sat. Each verifier input uses 82% to 88% of its standard op-cost budget.

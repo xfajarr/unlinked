@@ -68,7 +68,7 @@
   },
   "stats": {
     "constraints": 183095,
-    "proofSeconds": "8 to 12",
+    "proofSeconds": "12 to 23",
     "poolTxKb": 31,
     "poolTxFeeSat": 32000,
     "opCostBudget": "82% to 88%"
