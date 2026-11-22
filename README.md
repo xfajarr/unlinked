@@ -87,7 +87,9 @@ flowchart LR
 - Into BCH: pick a stablecoin and chain and send it to the NEAR deposit address. For PUSD or MUSD, NEAR delivers BCH to a key this browser made for the run, and the page swaps it on Cauldron and pays the token, plus leftover BCH, to your token address in one transaction. For BCH, NEAR pays your address directly.
 - Out of BCH: for PUSD or MUSD, send the token to the run's address. The page sells it on Cauldron and pays the NEAR deposit address in the same transaction, and NEAR sends the stablecoin to your address on the other chain. For BCH, you send it straight to the NEAR deposit address. Refunds and change go to your BCH address.
 
-The page shows the price from a live NEAR quote and the live Cauldron pools before you send anything. In a test on 22 Nov 2026, 5 USDC on Base quoted at about 4.93 PUSD, 4.91 MUSD or 0.02504 BCH, and 5 PUSD quoted at about 4.979 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`.
+The page shows the price from a live NEAR quote and the live Cauldron pools before you send anything. In a test on 22 Nov 2026, 5 USDC on Base quoted at about 4.93 PUSD, 4.91 MUSD or 0.02504 BCH, and 5 PUSD quoted at about 4.979 USDC on Base. Trades are built with `@cashlab/cauldron` and checked in the libauth VM before they are broadcast. The run is saved in the browser, so a refresh picks it up, and the page shows the run's recovery key in case it can't finish. Code: `src/lib/bridge.ts` and `src/screens/Bridge.tsx`, with wallets in `src/lib/wallet.ts` and `src/lib/evm.ts`.
+
+Wallets: on the BCH side, WizardConnect pairs a wallet such as Cashonize, Selene or Paytaca to fill in your address and to sign the PUSD, MUSD or BCH send. On EVM chains (Ethereum, Base, Arbitrum, BNB Chain, Optimism, Polygon, Avalanche, Gnosis, Scroll), a browser wallet such as MetaMask or Rabby, or WalletConnect once the site has a project id (`VITE_WC_PROJECT_ID`), sends the USDC or USDT transfer to the NEAR deposit address and the page tells NEAR about it right away. Solana, Tron and other chains use the deposit address and QR code.
 
 ## Screens
 
@@ -169,7 +171,6 @@ The WizardConnect transaction has one output to the one-time address, an `UNLK` 
 - Phase 2 is a single contribution plus a random beacon (`shield/circuits/scripts/setup.sh`). That is fine for a demo and not for real value: a multi-party ceremony is required before the pool holds meaningful funds.
 - The pool is new, so few notes sit in it today. The privacy a withdraw gets grows with the number of deposits.
 - Deposit and withdraw amounts are public. Transfers inside the pool are not.
-- The bridge asks you to send PUSD or MUSD from any CashTokens wallet. Signing that step over WizardConnect is not built yet.
 
 ## SolidCash
 
