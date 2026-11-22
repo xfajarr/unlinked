@@ -6,7 +6,7 @@ Private payment links on Bitcoin Cash. Share one link (`/@you`). Every payment l
 - You can't see the payer's wallet when they pay from a shielded balance.
 - Our server never learns who got paid. It stores public keys and handle-less announcements, nothing else.
 
-Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Pitch deck: https://getunlinked.pages.dev/deck.pdf.
+Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Demo video (real mainnet transactions): https://getunlinked.pages.dev/demo.mp4. Pitch deck: https://getunlinked.pages.dev/deck.pdf.
 
 ## How it works
 
