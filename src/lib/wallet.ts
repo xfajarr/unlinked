@@ -3,6 +3,7 @@ import { createElement } from 'react'
 import type { WalletStage } from '../components/WalletOverlay'
 import { CASHADDR_PREFIX, PUSD_CATEGORY, PUSD_DECIMALS } from './config'
 import type { Utxo } from './fulcrum'
+import { reloadOnStaleChunk } from './stale'
 
 export type WalletPay = { to: string; tokenTo: string; ephemeralPub: string; viewTag: number; currency: 'BCH' | 'PUSD'; amount: number; note?: string }
 
@@ -26,7 +27,10 @@ export async function payWithWallet(p: WalletPay): Promise<string> {
     import('./stealth'),
     import('react-dom/client'),
     import('../components/WalletOverlay'),
-  ])
+  ]).catch((e: unknown) => {
+    if (reloadOnStaleChunk(e)) return new Promise<never>(() => {})
+    throw e
+  })
 
   const mgr = new DappConnectionManager('Unlinked', undefined, { session: false })
   const relay = initiateDappRelay(({ client, status }) => mgr.updateConnection(client, status))

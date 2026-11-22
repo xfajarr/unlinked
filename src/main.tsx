@@ -2,6 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { reloadOnStaleChunk } from './lib/stale'
+
+window.addEventListener('vite:preloadError', (e) => { if (reloadOnStaleChunk((e as Event & { payload?: unknown }).payload)) e.preventDefault() })
+window.addEventListener('unhandledrejection', (e) => { if (reloadOnStaleChunk(e.reason)) e.preventDefault() })
 
 // Canonical URL before the first render: old links keep the route in the hash (/#/pay/ava), /pay/ava becomes /@ava,
 // and the host redirects /@ava to /%40ava.
