@@ -74,7 +74,7 @@ In the app you get one balance in USD, split into private (in the pool) and arri
 
 ## Stablecoin bridge
 
-[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves dollars between stablecoins on other chains and Bitcoin Cash, in both directions, with no account. On the BCH side you can pick PUSD (ParyonUSD), MUSD (Moria USD) or plain BCH. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and the BCH stablecoin.
+[getunlinked.pages.dev/bridge](https://getunlinked.pages.dev/bridge) moves stablecoins and other tokens between 37 chains and Bitcoin Cash, in both directions, with no account. The token picker lists every chain and token the app supports through NEAR Intents. On the BCH side you can pick PUSD (ParyonUSD), MUSD (Moria USD) or plain BCH. NEAR Intents moves the stablecoin to or from BCH, and Cauldron DEX pools swap BCH and the BCH stablecoin.
 
 ```mermaid
 flowchart LR
