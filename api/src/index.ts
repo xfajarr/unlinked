@@ -180,9 +180,39 @@ async function route(req: Request, env: Env): Promise<Response> {
   return json({ error: 'Not found' }, 404)
 }
 
+// Cloudflare Pages ignores Range requests, so a video there can't be scrubbed. This route serves the same file with
+// byte ranges; getunlinked.pages.dev/demo.mp4 redirects here.
+const DEMO_SRC = 'https://getunlinked.pages.dev/media/unlinked-demo.mp4'
+let demo: Promise<ArrayBuffer> | null = null
+
+async function demoVideo(req: Request): Promise<Response> {
+  demo ??= fetch(DEMO_SRC).then((r) => {
+    if (!r.ok) throw new Error(`demo source ${r.status}`)
+    return r.arrayBuffer()
+  })
+  const buf = await demo.catch((e) => {
+    demo = null
+    throw e
+  })
+  const size = buf.byteLength
+  const base = { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=300', ...CORS }
+  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') ?? '')
+  if (!m || (!m[1] && !m[2])) return new Response(req.method === 'HEAD' ? null : buf, { headers: { ...base, 'content-length': String(size) } })
+  const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]))
+  const end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1
+  if (start >= size || start > end) return new Response(null, { status: 416, headers: { ...base, 'content-range': `bytes */${size}` } })
+  return new Response(req.method === 'HEAD' ? null : buf.slice(start, end + 1), {
+    status: 206,
+    headers: { ...base, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(end - start + 1) },
+  })
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })
+    if (new URL(req.url).pathname === '/demo.mp4' && (req.method === 'GET' || req.method === 'HEAD')) {
+      return demoVideo(req).catch(() => json({ error: 'Video unavailable' }, 502))
+    }
     try {
       return await route(req, env)
     } catch (e) {

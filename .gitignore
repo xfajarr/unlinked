@@ -41,3 +41,4 @@ shield/contracts/build/*-live.build.json
 video/node_modules
 video/out
 public/demo.mp4
+public/media/
