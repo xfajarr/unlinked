@@ -69,7 +69,7 @@ function AssetMark({ a, size = 28 }: { a: BchAsset; size?: number }) {
   return <img src={ICON[a.id]} width={size} height={size} alt="" style={{ display: 'block', borderRadius: '50%', flexShrink: 0 }} />
 }
 
-export default function Bridge() {
+export default function Bridge({ inApp = false }: { inApp?: boolean }) {
   const [run, setRun] = useState<Saved | null>(load)
   const update = (s: Saved | null) => {
     // a cancelled token run may still receive funds, so its key is kept
@@ -86,8 +86,8 @@ export default function Bridge() {
     setRun(s)
   }
   return (
-    <div className="br-root">
-      <SiteNav page="bridge" />
+    <div className={`br-root${inApp ? ' in-app' : ''}`}>
+      {!inApp && <SiteNav page="bridge" />}
       <main className="br-main">
         <div className="br-head">
           <h1>Bridge</h1>

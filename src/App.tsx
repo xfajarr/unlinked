@@ -1,6 +1,6 @@
 import type React from 'react'
 import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ArrowUpRight, History, House, Link2, Wallet } from 'lucide-react'
+import { ArrowLeftRight, ArrowUpRight, History, House, Link2, Wallet } from 'lucide-react'
 import './styles/app.css'
 import { Logo } from './ui'
 import Onboarding from './screens/Onboarding'
@@ -74,6 +74,7 @@ const PAY_PATH = /^\/@([^/]+)(?:\/([^/]*))?\/?$/
 const NAV = [
   { path: '/dashboard', label: 'Home', short: 'Home', icon: House },
   { path: '/send', label: 'Send', short: 'Send', icon: ArrowUpRight },
+  { path: '/bridge', label: 'Bridge', short: 'Bridge', icon: ArrowLeftRight },
   { path: '/transactions', label: 'Activity', short: 'Activity', icon: History },
   { path: '/settings', label: 'Wallet', short: 'Wallet', icon: Wallet },
 ]
@@ -152,7 +153,7 @@ export default function App() {
   if (pay) {
     page = <Pay raw={pay[1]!} step={pay[2] ?? ''} search={search} />
     chrome = false
-  } else if (path === '/bridge') {
+  } else if (path === '/bridge' && (EMBED || !stored || !keys)) {
     page = <Suspense fallback={null}><Bridge /></Suspense>
     chrome = false
   } else if (path === '/landing' || (!user && (path === '/' || path === ''))) {
@@ -176,6 +177,7 @@ export default function App() {
       path === '/send' ? <Send key={'send' + route} /> :
       path === '/withdraw' ? <Send key={'withdraw' + route} mode="withdraw" /> :
       path === '/settings' ? <Settings /> :
+      path === '/bridge' ? <Suspense fallback={null}><Bridge inApp /></Suspense> :
       path === '/transactions' || path === '/payments' ? <Transactions key={route} /> :
       <Dashboard />
   }
