@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { ArrowDownUp, Check, ChevronDown, Search } from 'lucide-react'
 import { BCH_ASSET, xchainQuote, xchainStatus, xchainSubmit, type XStatus, type XToken } from '../lib/api'
@@ -8,6 +8,8 @@ import {
   recoveryWif, sellAndDeposit, toUnits, type BchAsset, type BchAssetId,
 } from '../lib/bridge'
 import { CopyButton, Modal } from '../ui'
+import { EVM_CHAIN_ID, WC_PROJECT_ID, connectInjected, connectWalletConnect, hasInjected, sendErc20, type EvmWallet } from '../lib/evm'
+import { sendWithWallet, walletAddress } from '../lib/wallet'
 import { cleanAmount } from './pay/format'
 import { LiveStatus, Notice } from './pay/PayShell'
 import { MAIN_CHAINS, chainName, groupByChain, useXTokens } from './pay/tokens'
@@ -42,6 +44,9 @@ type Saved = {
   depositAddress?: string
   depositMemo?: string
   amountOut?: string
+  contract?: string
+  inUnits?: string
+  sentTx?: string
   swapTxid?: string
   units?: string
   stage: 'deposit' | 'bridging' | 'done' | 'failed'
@@ -182,6 +187,31 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
   }, [key])
   const live = estimate?.key === key ? estimate : null
 
+  const [filling, setFilling] = useState<'bch' | 'evm' | null>(null)
+  const fillBch = async () => {
+    setFilling('bch')
+    try {
+      const w = await walletAddress()
+      setBch(dir === 'in' && A.category ? w.tokenAddress : w.address)
+    } catch (e) {
+      if (!/cancel/i.test(String(e))) setError(e instanceof Error ? e.message : 'Could not read the wallet address.')
+    } finally {
+      setFilling(null)
+    }
+  }
+  const fillEvm = async () => {
+    setFilling('evm')
+    try {
+      setOther((await connectInjected()).account)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not read the wallet address.')
+    } finally {
+      setFilling(null)
+    }
+  }
+  const bchFill = <button type="button" className="br-mini" disabled={!!filling} onClick={fillBch}>{filling === 'bch' ? 'Connecting…' : 'Use my BCH wallet'}</button>
+  const evmFill = EVM_CHAIN_ID[chain] && hasInjected() ? <button type="button" className="br-mini" disabled={!!filling} onClick={fillEvm}>{filling === 'evm' ? 'Connecting…' : 'Use my wallet'}</button> : null
+
   const start = async () => {
     if (!token) return
     setBusy(true)
@@ -194,7 +224,7 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
       if (dir === 'in') {
         const q = await xchainQuote({ data: { originAsset: token.assetId, amount: units.toString(), recipient: k ? k.address : user.plain, refundTo: other.trim() } })
         if ('error' in q) throw new Error(friendlyQuoteError(q.error, chainName(chain)))
-        onStart({ ...base, keyHex: k?.keyHex, depositAddress: q.depositAddress, depositMemo: q.depositMemo, amountOut: q.amountOut })
+        onStart({ ...base, keyHex: k?.keyHex, depositAddress: q.depositAddress, depositMemo: q.depositMemo, amountOut: q.amountOut, contract: token.contractAddress, inUnits: units.toString() })
       } else if (!k) {
         const q = await xchainQuote({ data: { originAsset: BCH_ASSET, destinationAsset: token.assetId, amount: units.toString(), recipient: other.trim(), refundTo: user.plain } })
         if ('error' in q) throw new Error(friendlyQuoteError(q.error, chainName(chain)))
@@ -264,14 +294,14 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
       <div className="br-fields">
         {dir === 'in' ? (
           <>
-            <Field label={`Receive ${A.id} at (Bitcoin Cash)`} value={bch} onChange={setBch} placeholder={A.category ? 'bitcoincash:z…' : 'bitcoincash:q…'}
+            <Field label={`Receive ${A.id} at (Bitcoin Cash)`} action={bchFill} value={bch} onChange={setBch} placeholder={A.category ? 'bitcoincash:z…' : 'bitcoincash:q…'}
               hint={bchInfo && !bchInfo.ok ? "That doesn't look like a Bitcoin Cash address." : needsZ && bchInfo?.ok && !bchInfo.tokens ? `${A.id} is a CashToken. Use your token address, it starts with bitcoincash:z.` : null} />
-            <Field label={`Refund address on ${chainName(chain)}`} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
+            <Field label={`Refund address on ${chainName(chain)}`} action={evmFill} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
           </>
         ) : (
           <>
-            <Field label={`Receive ${token.symbol} at (${chainName(chain)})`} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
-            <Field label="Refund address on Bitcoin Cash" value={bch} onChange={setBch} placeholder="bitcoincash:q…" hint={bchInfo && !bchInfo.ok ? "That doesn't look like a Bitcoin Cash address." : null} />
+            <Field label={`Receive ${token.symbol} at (${chainName(chain)})`} action={evmFill} value={other} onChange={setOther} placeholder={`${chainName(chain)} address`} hint={other.trim() && !otherOk ? `That doesn't look like a ${chainName(chain)} address.` : null} />
+            <Field label="Refund address on Bitcoin Cash" action={bchFill} value={bch} onChange={setBch} placeholder="bitcoincash:q…" hint={bchInfo && !bchInfo.ok ? "That doesn't look like a Bitcoin Cash address." : null} />
           </>
         )}
       </div>
@@ -309,13 +339,17 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
   )
 }
 
-function Field({ label, value, onChange, placeholder, hint }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; hint?: string | null }) {
+function Field({ label, action, value, onChange, placeholder, hint }: { label: string; action?: ReactNode; value: string; onChange: (v: string) => void; placeholder: string; hint?: string | null }) {
+  const id = useId()
   return (
-    <label className="pay-field">
-      <span className="pay-label">{label}</span>
-      <input className="field mono pay-refund" spellCheck={false} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    <div className="pay-field">
+      <div className="br-label-row">
+        <label className="pay-label" htmlFor={id}>{label}</label>
+        {action}
+      </div>
+      <input id={id} className="field mono pay-refund" spellCheck={false} autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
       {hint && <span className="help">{hint}</span>}
-    </label>
+    </div>
   )
 }
 
@@ -363,6 +397,9 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
   const [error, setError] = useState<string | null>(null)
   const [keyAddr, setKeyAddr] = useState<string | null>(null)
   const [wif, setWif] = useState<string | null>(null)
+  const [sending, setSending] = useState<string | null>(null)
+  const [walletErr, setWalletErr] = useState<string | null>(null)
+  const [wcUri, setWcUri] = useState<string | null>(null)
   const working = useRef(false)
   const latest = useRef(s)
   useEffect(() => {
@@ -459,6 +496,41 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
   const sendTo = s.dir === 'in' ? s.depositAddress : A.category ? keyAddr : s.depositAddress
   const showDeposit = !finished && at === 0 && sendTo
   const qrValue = sendTo && s.dir === 'out' && !A.category ? `${sendTo}?amount=${s.amount}` : sendTo
+  const chainId = EVM_CHAIN_ID[s.chain]
+  const evmPay = s.dir === 'in' && chainId && s.contract?.startsWith('0x') && s.inUnits && !s.depositMemo
+
+  const sent = (tx: string) => update({ ...latest.current, sentTx: tx })
+  const payEvm = async (kind: 'injected' | 'walletconnect') => {
+    setSending(kind)
+    setWalletErr(null)
+    try {
+      const w: EvmWallet = kind === 'injected' ? await connectInjected() : await connectWalletConnect(chainId!, setWcUri)
+      setWcUri(null)
+      const tx = await sendErc20(w, chainId!, chain, s.contract!, s.depositAddress!, BigInt(s.inUnits!))
+      xchainSubmit({ data: { txHash: tx, depositAddress: s.depositAddress! } }).catch(() => {})
+      sent(tx)
+      if (w.kind === 'walletconnect') w.provider.disconnect?.().catch(() => {})
+    } catch (e) {
+      setWcUri(null)
+      setWalletErr(e instanceof Error ? e.message : 'The wallet did not send the transfer.')
+    } finally {
+      setSending(null)
+    }
+  }
+  const payBch = async () => {
+    if (!sendTo) return
+    setSending('wizard')
+    setWalletErr(null)
+    try {
+      const tx = await sendWithWallet({ to: sendTo, category: A.category, units: toUnits(s.amount, A.decimals), label: A.id, prompt: `Bridge ${s.amount} ${A.id} to ${s.symbol} on ${chain}` })
+      if (!A.category && s.depositAddress) xchainSubmit({ data: { txHash: tx, depositAddress: s.depositAddress } }).catch(() => {})
+      sent(tx)
+    } catch (e) {
+      if (!/cancel/i.test(String(e))) setWalletErr(e instanceof Error ? e.message : 'The wallet did not send it.')
+    } finally {
+      setSending(null)
+    }
+  }
 
   return (
     <>
@@ -496,7 +568,29 @@ function Run({ s, update }: { s: Saved; update: (s: Saved | null) => void }) {
               <CopyButton text={s.depositMemo} label="Copy memo" />
             </div>
           )}
+          {!s.sentTx && (
+            <div className="br-wallets">
+              {s.dir === 'out' ? (
+                <button type="button" className="btn btn-primary block" disabled={!!sending} onClick={payBch}>{sending ? 'Waiting for your wallet…' : `Send with WizardConnect`}</button>
+              ) : evmPay ? (
+                <>
+                  {hasInjected() && <button type="button" className="btn btn-primary block" disabled={!!sending} onClick={() => payEvm('injected')}>{sending === 'injected' ? 'Confirm in your wallet…' : `Send ${s.symbol} with browser wallet`}</button>}
+                  {WC_PROJECT_ID && <button type="button" className={`btn block ${hasInjected() ? 'btn-secondary' : 'btn-primary'}`} disabled={!!sending} onClick={() => payEvm('walletconnect')}>{sending === 'walletconnect' ? 'Confirm in your wallet…' : 'Send with WalletConnect'}</button>}
+                </>
+              ) : null}
+              <p className="help">Or send it yourself to the address above.</p>
+            </div>
+          )}
+          {s.sentTx && <p className="help">Sent: <span className="mono">{short(s.sentTx, 8)}</span>. Waiting for it to arrive.</p>}
+          {walletErr && <Notice>{walletErr}</Notice>}
         </>
+      )}
+      {wcUri && (
+        <Modal title="Scan with your wallet" onClose={() => setWcUri(null)}>
+          <div className="center"><div className="pay-qr"><QRCodeSVG value={wcUri} size={220} level="M" fgColor="#0b0d14" aria-label="WalletConnect QR code" /></div></div>
+          <div className="link-box"><span className="url mono pay-addr">{wcUri}</span><CopyButton text={wcUri} label="Copy link" /></div>
+          <p className="help">Open a WalletConnect wallet such as MetaMask, Rainbow or Trust Wallet and scan this code.</p>
+        </Modal>
       )}
 
       <Steps items={steps} at={at} />

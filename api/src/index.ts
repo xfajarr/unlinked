@@ -119,7 +119,7 @@ async function route(req: Request, env: Env): Promise<Response> {
       const r = await fetch(`${ONECLICK}/tokens`, { headers: ocHeaders(env) })
       if (!r.ok) return json({ error: 'Could not load chains' }, 502)
       const all = (await r.json()) as Record<string, unknown>[]
-      return json(all.map(({ assetId, symbol, blockchain, decimals, price }) => ({ assetId, symbol, blockchain, decimals, price })))
+      return json(all.map(({ assetId, symbol, blockchain, decimals, price, contractAddress }) => ({ assetId, symbol, blockchain, decimals, price, contractAddress })))
     }
 
     case 'POST /api/xchain/quote': {

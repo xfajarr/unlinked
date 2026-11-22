@@ -12,7 +12,7 @@ export type Profile = {
   fingerprint: string
 }
 export type Announcement = { id: number; ephemeralPub: string; viewTag: number; noteCiphertext: string | null; createdAt: number }
-export type XToken = { assetId: string; symbol: string; blockchain: string; decimals: number; price: number }
+export type XToken = { assetId: string; symbol: string; blockchain: string; decimals: number; price: number; contractAddress?: string }
 export type XQuote = { depositAddress: string; depositMemo?: string; amountIn: string; amountOut: string; amountOutUsd: string; timeEstimate: number; deadline: string }
 export type XStatus = 'PENDING_DEPOSIT' | 'KNOWN_DEPOSIT_TX' | 'PROCESSING' | 'SUCCESS' | 'INCOMPLETE_DEPOSIT' | 'REFUNDED' | 'FAILED' | 'UNKNOWN'
 

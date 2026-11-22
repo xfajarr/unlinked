@@ -24,6 +24,7 @@
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
     "@scure/bip39": "^2.4.0",
+    "@walletconnect/ethereum-provider": "^2.26.0",
     "@web3icons/react": "^4.1.27",
     "@wizardconnect/dapp": "^0.2.8",
     "@wizardconnect/react": "^0.2.7",

@@ -59,3 +59,8 @@
 }
 
 .ld-links button[aria-current="page"] { background: #fff; color: var(--ink-12); }
+.br-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.br-mini { font-size: 13px; font-weight: 600; color: var(--blue-9); background: none; padding: 2px 0; cursor: pointer; }
+.br-mini:disabled { color: var(--ink-9); cursor: default; }
+.br-wallets { display: flex; flex-direction: column; gap: 8px; margin: 14px 6px 0; }
+.br-wallets .help { text-align: center; margin: 0; }
