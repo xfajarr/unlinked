@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronRight, Clock, Copy, Info, KeyRound, ScanLine, ShieldCheck } from 'lucide-react'
 import Scanner from './Scanner'
 import { Modal, RollingNumber, TokenIcon } from '../ui'
@@ -9,6 +10,8 @@ import type { Entry } from '../app/history'
 import { fmtBch, fmtPusd, fmtUsd, linkFor, linkHost } from '../app/format'
 import { ShieldingCard } from '../app/ShieldParts'
 import { SHIELD_LIVE } from '../lib/shield/deployment'
+import { vaultKind, type VaultKind } from '../lib/vault'
+import { RecoveryPhrase } from './Settings'
 
 function CopyHandle({ handle }: { handle: string }) {
   const [ok, setOk] = useState(false)
@@ -22,6 +25,19 @@ function CopyHandle({ handle }: { handle: string }) {
 
 const heroBch = (sats: number) => (sats / 1e8).toFixed(8).replace(/(\.\d{4}\d*?)0+$/, '$1')
 const heroUsd = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+function BackupGate({ kind }: { kind: VaultKind }) {
+  return createPortal(
+    <div className="backdrop">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Save your 12 words">
+        <div className="modal-head"><h2 className="modal-title">Save your 12 words</h2></div>
+        <p className="muted" style={{ margin: '0 0 16px', fontSize: 15, lineHeight: 1.5 }}>You just got paid. These 12 words are the only way back to your money if you forget your {kind === 'pin' ? 'PIN' : 'password'} or lose this device, and we can’t recover them for you. Write them down now.</p>
+        <RecoveryPhrase backedUp={false} kind={kind} onDone={() => {}} />
+      </div>
+    </div>,
+    document.body,
+  )
+}
 
 function BalanceInfo({ onClose }: { onClose: () => void }) {
   return (
@@ -124,6 +140,7 @@ export default function Dashboard() {
         </section>
 
         {info && <BalanceInfo onClose={() => setInfo(false)} />}
+        {!stored.backedUp && !loading && (sats.total > 0 || history.some((e) => e.kind === 'in')) && <BackupGate kind={vaultKind(stored)} />}
         {shielding && <ShieldingCard sats={shielding.sats} progress={shielding.progress} />}
 
         <section className="panel">
