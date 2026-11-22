@@ -1,31 +1,21 @@
 import React from "react";
-import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
-import data from "../data.json";
+import { AbsoluteFill, Easing, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { c, font, shadow } from "../theme";
-import { Backdrop, H1, Kicker, Sub, ease, fadeUp, usePop } from "../ui";
+import { Backdrop, H1, Kicker, Sub, fadeUp, usePop } from "../ui";
 
 const FRAME_W = 1320;
-const IMG_H = Math.round((FRAME_W * 1080) / 2880);
-
-const LinkIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-  </svg>
-);
+const IMG_H = 640;
+// landing-scroll.jpg is the live landing page at 1440 px wide; scroll down to "Still pasting wallet addresses?"
+const SCROLL_TO = Math.round((2420 * FRAME_W) / 1440);
 
 export const OneLink: React.FC = () => {
   const frame = useCurrentFrame();
-  const browserIn = usePop(30, 20);
-  const pillIn = usePop(250, 16);
-  const url = data.links.profile;
-  const typed = Math.floor(
-    interpolate(frame, [262, 262 + url.length * 1.6], [0, url.length], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    }),
-  );
-  const zoom = interpolate(frame, [30, 480], [1, 1.06]);
+  const browserIn = usePop(10, 18);
+  const scrollY = interpolate(frame, [40, 250], [0, SCROLL_TO], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.cubic),
+  });
 
   return (
     <AbsoluteFill>
@@ -89,39 +79,8 @@ export const OneLink: React.FC = () => {
             </div>
           </div>
           <div style={{ height: IMG_H, overflow: "hidden" }}>
-            <Img
-              src={staticFile("landing.png")}
-              style={{ width: FRAME_W, height: IMG_H, scale: `${zoom}`, transformOrigin: "50% 40%" }}
-            />
+            <Img src={staticFile("landing-scroll.jpg")} style={{ width: FRAME_W, display: "block", translate: `0px ${-scrollY}px` }} />
           </div>
-        </div>
-
-        <div
-          style={{
-            height: 84,
-            minWidth: 640,
-            padding: "0 36px 0 28px",
-            borderRadius: 999,
-            background: c.ink12,
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            gap: 18,
-            fontFamily: font.ui,
-            fontSize: 36,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            opacity: pillIn,
-            scale: `${interpolate(pillIn, [0, 1], [0.8, 1])}`,
-            translate: `0px ${interpolate(pillIn, [0, 1], [30, 0], { easing: ease })}px`,
-            boxShadow: shadow.lift,
-          }}
-        >
-          <LinkIcon size={34} color={c.blue6} />
-          <span>
-            {url.slice(0, typed)}
-            <span style={{ opacity: typed < url.length || Math.floor(frame / 15) % 2 === 0 ? 1 : 0, color: c.blue6 }}>|</span>
-          </span>
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

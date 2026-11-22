@@ -15,15 +15,16 @@ import { c, font } from "./theme";
 const T = 20;
 
 // ElevenLabs narration (voice "Brian"), start frame per clip; scene and phase cuts sit on its sentence breaks
-const VO: [string, number][] = [["1-hook", 12], ["2-onelink", 232], ["3-wizard", 492], ["4-private", 1062], ["5-chain", 1537], ["6-hood", 1942], ["7-end", 2367]];
+// [file, start frame, trim start frame, trim end frame]; "Under the hood," plays over the flow slide, the rest over the ledger
+const VO: [string, number, number?, number?][] = [["1-hook", 12], ["2-onelink", 232], ["3-wizard", 572], ["4-private", 1142], ["5-chain", 1617], ["6-hood", 2024, 0, 30], ["6-hood", 2168, 30], ["7-end", 2618]];
 
 export const SCENES = [
   { name: "Hook", dur: 300, C: Hook },
-  { name: "One link", dur: 220, C: OneLink },
+  { name: "One link", dur: 300, C: OneLink },
   { name: "WizardConnect", dur: 590, C: Wizard },
   { name: "Private by default", dur: 495, C: Private },
   { name: "Any chain", dur: 425, C: CrossChain },
-  { name: "Under the hood", dur: 445, C: UnderHood },
+  { name: "Under the hood", dur: 616, C: UnderHood },
   { name: "End", dur: 210, C: End },
 ];
 
@@ -53,9 +54,9 @@ export const UnlinkedDemo: React.FC = () => (
         ];
       })}
     </TransitionSeries>
-    {VO.map(([f, sec]) => (
-      <Sequence key={f} from={sec} layout="none">
-        <Audio src={staticFile(`vo/${f}.mp3`)} />
+    {VO.map(([f, from, trimBefore, trimAfter]) => (
+      <Sequence key={`${f}-${from}`} from={from} layout="none">
+        <Audio src={staticFile(`vo/${f}.mp3`)} trimBefore={trimBefore} trimAfter={trimAfter} />
       </Sequence>
     ))}
   </AbsoluteFill>

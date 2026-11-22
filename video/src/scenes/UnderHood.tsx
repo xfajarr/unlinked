@@ -22,7 +22,7 @@ const Flow: React.FC = () => {
         style={{
           opacity: p,
           translate: `0px ${interpolate(p, [0, 1], [70, 0])}px`,
-          scale: `${interpolate(frame, [0, 80], [0.97, 1.02])}`,
+          scale: `${interpolate(frame, [0, 150], [0.97, 1.02])}`,
         }}
       >
         <Shot src="deck-flow.png" width={W} height={H} radius={30} />
@@ -49,7 +49,7 @@ const Ledger: React.FC = () => {
         <span style={{ textAlign: "right" }}>Pool value, sat</span>
       </div>
       {sh.history.map((h, i) => {
-        const start = 30 + i * 20;
+        const start = 300 + i * 14;
         const isLast = i === sh.history.length - 1;
         return (
           <div
@@ -98,10 +98,10 @@ const Pool: React.FC = () => {
     <AbsoluteFill style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 44, padding: "0 110px" }}>
       <Ledger />
       <div style={{ width: 590, display: "flex", flexDirection: "column", gap: 18 }}>
-        <Tile start={20} big={<CountUp to={st.constraints} start={24} dur={50} />} label="circuit constraints" />
-        <Tile start={60} big={`~${st.poolTxKb} kB`} label={`per pool tx, fee about ${fmt(st.poolTxFeeSat)} sat`} />
-        <Tile start={110} big="Groth16" label="verified in BCH Script, a SolidCash covenant" />
-        <div style={{ fontSize: 25, color: c.ink10, padding: "4px 8px", ...fadeUp(frame, 200) }}>
+        <Tile start={20} big={<CountUp to={st.constraints} start={24} dur={60} />} label="circuit constraints" />
+        <Tile start={90} big={`~${st.poolTxKb} kB`} label={`per pool tx, fee about ${fmt(st.poolTxFeeSat)} sat`} />
+        <Tile start={160} big="Groth16" label="verified in BCH Script, a SolidCash covenant" />
+        <div style={{ fontSize: 25, color: c.ink10, padding: "4px 8px", ...fadeUp(frame, 240) }}>
           Proofs take {st.proofSeconds} s in the browser. Each verifier input uses {st.opCostBudget} of its op-cost budget.
         </div>
       </div>
@@ -112,10 +112,10 @@ const Pool: React.FC = () => {
 export const UnderHood: React.FC = () => (
   <AbsoluteFill style={{ fontFamily: font.ui, color: c.ink12 }}>
     <Backdrop />
-    <Phase from={0} dur={80} name="Deck flow">
+    <Phase from={0} dur={150} name="Deck flow">
       <Flow />
     </Phase>
-    <Phase from={76} dur={369} name="Pool ledger" fadeOut={false}>
+    <Phase from={146} dur={470} name="Pool ledger" fadeOut={false}>
       <Pool />
     </Phase>
   </AbsoluteFill>
