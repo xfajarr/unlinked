@@ -18,11 +18,10 @@ function safeDecode(s: string) {
   }
 }
 
-export default function Pay({ raw }: { raw: string }) {
-  const [h = '', qs = ''] = raw.split('?')
-  const handle = normalizeHandle(safeDecode(h))
+export default function Pay({ raw, step, search }: { raw: string; step: string; search: string }) {
+  const handle = normalizeHandle(safeDecode(raw))
   const valid = HANDLE.test(handle)
-  const params = new URLSearchParams(qs)
+  const params = new URLSearchParams(search)
   const usd = Number(params.get('amount'))
   const askedUsd = Number.isFinite(usd) && usd > 0 ? usd : null
   const askedNote = (params.get('note') ?? '').slice(0, 80)
@@ -46,7 +45,7 @@ export default function Pay({ raw }: { raw: string }) {
     document.title = load.k === 'ok' ? `Pay @${load.profile.handle} on Unlinked` : 'Unlinked'
   }, [load])
 
-  if (valid && load.k === 'ok') return <PayPage key={load.profile.handle} profile={load.profile} askedUsd={askedUsd} askedNote={askedNote} />
+  if (valid && load.k === 'ok') return <PayPage key={load.profile.handle} profile={load.profile} step={step} askedUsd={askedUsd} askedNote={askedNote} />
 
   if (valid && load.k === 'loading') {
     return (
@@ -90,7 +89,7 @@ export default function Pay({ raw }: { raw: string }) {
           </>
         )}
       </div>
-      <a className="btn btn-primary block pay-gap" href="#/onboarding" style={{ textDecoration: 'none' }}>{valid ? 'Claim it' : 'Get your own link'}</a>
+      <a className="btn btn-primary block pay-gap" href="/onboarding" style={{ textDecoration: 'none' }}>{valid ? 'Claim it' : 'Get your own link'}</a>
     </PayShell>
   )
 }

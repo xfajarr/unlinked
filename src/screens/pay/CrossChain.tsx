@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { xchainQuote, type Profile, type XQuote, type XToken } from '../../lib/api'
+import { xchainQuote, type Profile, type XQuote, type XStatus, type XToken } from '../../lib/api'
 import { preparePayment } from '../../lib/payments'
 import type { OneTime } from '../../lib/stealth'
 import { ChainPicker, TokenPicker } from './ChainPicker'
@@ -13,17 +13,28 @@ import { XDeposit, type Deposit } from './XDeposit'
 
 type Dry = { key: string; out?: string; secs?: number; error?: string }
 
-export function CrossChain({ profile, usd, x, onBack, onPaid }: { profile: Profile; usd: number; x: XTokens; onBack: () => void; onPaid: (p: PaidInfo) => void }) {
+type Props = {
+  profile: Profile
+  usd: number
+  x: XTokens
+  deposit: Deposit | null
+  onBack: () => void
+  onDeposit: (d: Deposit) => void
+  onDepositBack: () => void
+  onDepositStatus: (s: XStatus) => void
+  onPaid: (p: PaidInfo) => void
+}
+
+export function CrossChain({ profile, usd, x, deposit, onBack, onDeposit, onDepositBack, onDepositStatus, onPaid }: Props) {
   const groups = useMemo(() => (x.tokens ? groupByChain(x.tokens) : null), [x.tokens])
   const price = bchPrice(x.tokens)
-  const [chain, setChain] = useState('base')
-  const [tokenId, setTokenId] = useState('')
-  const [amount, setAmount] = useState('')
+  const [chain, setChain] = useState(deposit?.token.blockchain ?? 'base')
+  const [tokenId, setTokenId] = useState(deposit?.token.assetId ?? '')
+  const [amount, setAmount] = useState(deposit?.amount ?? '')
   const [refunds, setRefunds] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dry, setDry] = useState<Dry | null>(null)
-  const [deposit, setDeposit] = useState<Deposit | null>(null)
   const { begin } = useFlow()
 
   const list = groups?.get(chain) ?? []
@@ -78,10 +89,10 @@ export function CrossChain({ profile, usd, x, onBack, onPaid }: { profile: Profi
     if (!alive()) return
     setBusy(false)
     if ('error' in q) return setError(friendlyQuoteError(q.error, name))
-    setDeposit({ quote: q, ot, token, amount, chain: name })
+    onDeposit({ quote: q, ot, token, amount, chain: name, startedAt: Date.now() })
   }
 
-  if (deposit) return <XDeposit handle={profile.handle} d={deposit} onBack={() => setDeposit(null)} onPaid={onPaid} />
+  if (deposit) return <XDeposit handle={profile.handle} d={deposit} onBack={onDepositBack} onPaid={onPaid} onStatus={onDepositStatus} />
 
   const live = dry && dry.key === key ? dry : null
   const estimate = live?.out ? fmtCoin(live.out) : token && price && amountNum(amount) ? fmtCoin((amountNum(amount) * token.price) / price, 6) : null

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { go } from '../../App'
 import type { Profile } from '../../lib/api'
 import { preparePayment, satsToBch } from '../../lib/payments'
 import type { OneTime } from '../../lib/stealth'
@@ -7,32 +8,59 @@ import { CrossChain } from './CrossChain'
 import { amountNum, fmtCoin, PRESETS, type Currency } from './format'
 import { PaidScreen, type PaidInfo } from './PaidScreen'
 import { PayForm } from './PayForm'
+import { clearSaved, loadSaved, storeSaved, type Saved, type Step } from './saved'
 import { QrScreen } from './QrScreen'
 import { bchPrice, useXTokens } from './tokens'
 import { useFlow } from './useFlow'
 import { WalletScreen } from './WalletScreen'
 import { suggestAmount } from './xchain'
+import type { Deposit } from './XDeposit'
 
 type Screen =
   | { k: 'form' }
   | { k: 'qr'; amount: number; ot: OneTime | null; failed: boolean }
   | { k: 'wallet'; amount: number; currency: Currency; ot: OneTime | null; error: string | null }
-  | { k: 'xchain' }
+  | { k: 'chain' }
+  | { k: 'deposit'; d: Deposit }
   | { k: 'paid'; paid: PaidInfo }
 
 const PREP_FAILED = "Couldn't prepare a private address. Try again."
+const FORM: Screen = { k: 'form' }
 
-export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; askedUsd: number | null; askedNote: string }) {
+const stepOf = (s: Screen): Step => (s.k === 'form' ? '' : s.k)
+
+/** The screen a step URL shows, or null when its saved data is gone. A WizardConnect session can't resume, so wallet never does. */
+function fromSaved(step: string, s: Saved | null): Screen | null {
+  switch (step) {
+    case '': return FORM
+    case 'qr': return s?.qr ? { k: 'qr', amount: s.qr.amount, ot: s.qr.ot, failed: false } : null
+    case 'chain': return { k: 'chain' }
+    case 'deposit': return s?.deposit ? { k: 'deposit', d: s.deposit } : null
+    case 'paid': return s?.paid ? { k: 'paid', paid: s.paid } : null
+    default: return null
+  }
+}
+
+type Props = { profile: Profile; step: string; askedUsd: number | null; askedNote: string }
+
+export function PayPage({ profile, step, askedUsd, askedNote }: Props) {
+  const handle = profile.handle
   const x = useXTokens()
   const price = bchPrice(x.tokens)
-  const [currency, setCurrency] = useState<Currency>('BCH')
-  const [amount, setAmount] = useState(askedUsd ? '' : PRESETS.BCH[1]!)
+  const [init] = useState(() => {
+    const saved = loadSaved(handle)
+    // reopening the bare link mid-payment goes back to the address the payer may already have paid
+    const want = step === '' && (saved?.step === 'qr' || saved?.step === 'deposit') ? saved.step : step
+    return { saved: want ? saved : null, screen: fromSaved(want, saved) ?? FORM }
+  })
+  const [currency, setCurrency] = useState<Currency>(init.saved?.currency ?? 'BCH')
+  const [amount, setAmount] = useState(init.saved ? init.saved.amount : askedUsd ? '' : PRESETS.BCH[1]!)
   // the note is not encrypted or posted yet (spec 5.3); only payWithWallet receives it
-  const [note, setNote] = useState(askedNote)
-  const [screen, setScreen] = useState<Screen>({ k: 'form' })
+  const [note, setNote] = useState(init.saved ? init.saved.note : askedNote)
+  const [screen, setScreen] = useState<Screen>(init.screen)
   const { begin, cancel } = useFlow()
   const n = amountNum(amount)
-  const edited = useRef(false)
+  const edited = useRef(!!init.saved)
 
   useEffect(() => {
     if (askedUsd && price && !edited.current && currency === 'BCH') setAmount(suggestAmount(askedUsd, price, 8))
@@ -42,14 +70,65 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
     window.scrollTo(0, 0)
   }, [screen.k])
 
-  const back = () => (cancel(), setScreen({ k: 'form' }))
+  const urlFor = (st: Step) => `/@${handle}${st ? `/${st}` : ''}${window.location.search}`
+
+  // Steps pushed here remember the URL they came from, so in-app Back can pop the entry instead of stacking a new one.
+  function show(next: Screen, replace = false) {
+    setScreen(next)
+    const url = urlFor(stepOf(next))
+    if (replace) go(url, { replace: true, state: history.state })
+    else go(url, { state: { payFrom: window.location.pathname + window.location.search } })
+  }
+
+  function backTo(next: Screen) {
+    cancel()
+    setScreen(next)
+    const url = urlFor(stepOf(next))
+    if ((history.state as { payFrom?: string } | null)?.payFrom === url) history.back()
+    else go(url, { replace: true, state: history.state })
+  }
+
+  // URL is the source of truth for the step: on mount the restored screen fixes the URL, after Back/Forward the URL picks the screen
+  const seen = useRef(step)
+  useEffect(() => {
+    const mine = stepOf(screen)
+    if (step === mine) return void (seen.current = step)
+    if (step === seen.current) return void go(urlFor(mine), { replace: true, state: history.state })
+    seen.current = step
+    cancel()
+    const next = fromSaved(step, loadSaved(handle))
+    setScreen(next ?? FORM)
+    if (!next) go(urlFor(''), { replace: true, state: history.state })
+  }, [step])
+
+  // Step data is merged in, so Back to the form and Forward again finds the same one-time address.
+  useEffect(() => {
+    const prev = loadSaved(handle)
+    if (screen.k === 'form') {
+      if (prev && prev.step !== '') storeSaved(handle, { ...prev, step: '' })
+      return
+    }
+    storeSaved(handle, {
+      ...prev,
+      step: stepOf(screen),
+      currency,
+      amount,
+      note,
+      ...(screen.k === 'qr' && { qr: screen.ot ? { amount: screen.amount, ot: screen.ot } : undefined }),
+      ...(screen.k === 'deposit' && { deposit: screen.d }),
+      // a paid flow drops its address, so Back can't reopen a step that would report "paid" again
+      ...(screen.k === 'paid' && { paid: screen.paid, qr: undefined, deposit: undefined }),
+    })
+  }, [screen, currency, amount, note])
+
+  const back = () => (clearSaved(handle), backTo(FORM))
   const done = () => (back(), setNote(''))
 
   function showQr(reuse?: OneTime) {
     const amt = currency === 'BCH' ? n : 0
-    if (reuse) return setScreen({ k: 'qr', amount: amt, ot: reuse, failed: false })
+    if (reuse) return show({ k: 'qr', amount: amt, ot: reuse, failed: false })
     const alive = begin()
-    setScreen({ k: 'qr', amount: amt, ot: null, failed: false })
+    show({ k: 'qr', amount: amt, ot: null, failed: false })
     preparePayment(profile).then(
       (ot) => alive() && setScreen({ k: 'qr', amount: amt, ot, failed: false }),
       () => alive() && setScreen({ k: 'qr', amount: amt, ot: null, failed: true }),
@@ -59,7 +138,7 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
   async function payWallet() {
     const alive = begin()
     const base = { k: 'wallet' as const, amount: n, currency }
-    setScreen({ ...base, ot: null, error: null })
+    show({ ...base, ot: null, error: null })
     let ot: OneTime
     try {
       ot = await preparePayment(profile)
@@ -72,11 +151,11 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
     try {
       const txid = await payWithWallet({ to: ot.address, tokenTo: ot.tokenAddress, ephemeralPub: ot.ephemeralPub, viewTag: ot.viewTag, currency, amount: n, note: note.trim() || undefined })
       if (!alive()) return
-      setScreen({ k: 'paid', paid: { amount: fmtCoin(n, currency === 'BCH' ? 8 : 2), currency, address: currency === 'PUSD' ? ot.tokenAddress : ot.address, txid } })
+      show({ k: 'paid', paid: { amount: fmtCoin(n, currency === 'BCH' ? 8 : 2), currency, address: currency === 'PUSD' ? ot.tokenAddress : ot.address, txid } }, true)
     } catch (e) {
       if (!alive()) return
       const msg = e instanceof Error && e.message ? e.message : 'The wallet did not send the payment.'
-      if (/cancel/i.test(msg)) return setScreen({ k: 'form' })
+      if (/cancel/i.test(msg)) return backTo(FORM)
       setScreen({ ...base, ot, error: msg })
     }
   }
@@ -93,7 +172,7 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
           onBack={back}
           onPaid={(utxos) => {
             const sats = utxos.reduce((s, u) => s + u.value, 0)
-            setScreen({ k: 'paid', paid: { amount: fmtCoin(sats ? satsToBch(sats) : screen.amount), currency: 'BCH', address: screen.ot?.address ?? '', txid: utxos[0]?.tx_hash } })
+            show({ k: 'paid', paid: { amount: fmtCoin(sats ? satsToBch(sats) : screen.amount), currency: 'BCH', address: screen.ot?.address ?? '', txid: utxos[0]?.tx_hash } }, true)
           }}
         />
       )
@@ -109,8 +188,25 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
           onBack={back}
         />
       )
-    case 'xchain':
-      return <CrossChain profile={profile} usd={currency === 'BCH' ? (price ? n * price : 0) : n} x={x} onBack={back} onPaid={(paid) => setScreen({ k: 'paid', paid })} />
+    case 'chain':
+    case 'deposit':
+      return (
+        <CrossChain
+          profile={profile}
+          usd={currency === 'BCH' ? (price ? n * price : 0) : n}
+          x={x}
+          deposit={screen.k === 'deposit' ? screen.d : null}
+          onBack={back}
+          onDeposit={(d) => show({ k: 'deposit', d })}
+          onDepositBack={() => {
+            const s = loadSaved(handle)
+            if (s) storeSaved(handle, { ...s, deposit: undefined })
+            backTo({ k: 'chain' })
+          }}
+          onDepositStatus={(status) => screen.k === 'deposit' && setScreen({ k: 'deposit', d: { ...screen.d, status } })}
+          onPaid={(paid) => show({ k: 'paid', paid }, true)}
+        />
+      )
     case 'paid':
       return <PaidScreen handle={profile.handle} paid={screen.paid} onDone={done} />
     default:
@@ -133,7 +229,7 @@ export function PayPage({ profile, askedUsd, askedNote }: { profile: Profile; as
           onNote={setNote}
           onWallet={payWallet}
           onQr={() => showQr()}
-          onXchain={() => setScreen({ k: 'xchain' })}
+          onXchain={() => show({ k: 'chain' })}
         />
       )
   }

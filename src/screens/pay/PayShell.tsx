@@ -13,7 +13,7 @@ export function PayShell({ onBack, children, bare }: { onBack?: () => void; chil
         </div>
         <div />
         <div className="topbar-right">
-          <a className="btn btn-white md" href="#/onboarding" style={{ textDecoration: 'none' }}>Get <span className="hide-sm">your own </span>link</a>
+          <a className="btn btn-white md" href="/onboarding" style={{ textDecoration: 'none' }}>Get <span className="hide-sm">your own </span>link</a>
         </div>
       </header>
       <main className="main narrow">

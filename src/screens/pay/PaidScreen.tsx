@@ -30,7 +30,7 @@ export function PaidScreen({ handle, paid, onDone }: { handle: string; paid: Pai
       <p className="help">Your payment went to an address nobody will ever see again.</p>
       <div className="pay-actions">
         <button type="button" className="btn btn-primary block" onClick={onDone}>Done</button>
-        <a className="btn btn-secondary block" href="#/onboarding" style={{ textDecoration: 'none' }}>Get your own link</a>
+        <a className="btn btn-secondary block" href="/onboarding" style={{ textDecoration: 'none' }}>Get your own link</a>
       </div>
     </PayShell>
   )
