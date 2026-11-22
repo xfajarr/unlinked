@@ -2,14 +2,26 @@ import { useEffect, useRef, useState } from 'react'
 import { CameraOff } from 'lucide-react'
 import { Modal } from '../ui'
 import { go } from '../App'
+import { APP_HOST, CASHADDR_PREFIX } from '../lib/config'
 
-/** Turn scanned or pasted text into where it should go: @user → Send, BCH address → Withdraw. */
+function handleFrom(t: string): string | null {
+  if (/^@[a-z0-9_]{3,20}$/i.test(t)) return t.slice(1)
+  let u: URL
+  try {
+    u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : `https://${t}`)
+  } catch {
+    return null
+  }
+  if (u.host !== APP_HOST && u.host !== location.host) return null
+  return u.hash.match(/^#\/pay\/@?([a-z0-9_]{3,20})(?:[?/]|$)/i)?.[1] ?? u.pathname.match(/^\/@?([a-z0-9_]{3,20})\/?$/i)?.[1] ?? null
+}
+
 export function routeFromScan(raw: string): string | null {
   const t = raw.trim()
-  const handle = t.match(/(?:unlinked\.cash\/)?@([a-z0-9_]{3,20})/i)?.[1]
+  const addr = t.match(new RegExp(`^(?:${CASHADDR_PREFIX}:)?([qpzr][02-9ac-hj-np-z]{41})(?:\\?.*)?$`, 'i'))?.[1]
+  if (addr) return `/withdraw?to=${encodeURIComponent(`${CASHADDR_PREFIX}:${addr.toLowerCase()}`)}`
+  const handle = handleFrom(t)
   if (handle) return `/send?to=${encodeURIComponent('@' + handle.toLowerCase())}`
-  const addr = t.match(/^(?:bitcoincash:)?([qp][a-z0-9]{41})/i)?.[1]
-  if (addr) return `/withdraw?to=${encodeURIComponent('bitcoincash:' + addr.toLowerCase())}`
   return null
 }
 
