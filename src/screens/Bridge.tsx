@@ -238,7 +238,7 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
   }
 
   if (!pairs || !token) {
-    return x.failed ? <Notice>Couldn't load tokens. <button type="button" className="btn sm btn-secondary" onClick={x.reload}>Retry</button></Notice> : <LiveStatus>Loading tokens…</LiveStatus>
+    return x.failed ? <Notice>Couldn't load tokens. <button type="button" className="btn sm btn-secondary" onClick={x.reload}>Retry</button></Notice> : <Skeleton />
   }
 
   const otherPicker = (
@@ -336,6 +336,34 @@ function Form({ onStart }: { onStart: (s: Saved) => void }) {
         </Modal>
       )}
     </>
+  )
+}
+
+function Skeleton() {
+  const side = (label: string) => (
+    <div className="br-side">
+      <span className="br-side-label">{label}</span>
+      <div className="br-side-row">
+        <span className="br-sk br-sk-amt" />
+        <span className="br-sk br-sk-pill"><span className="br-sk-coin" /><span className="br-sk-lines"><i /><i /></span></span>
+      </div>
+      <span className="br-sk br-sk-foot" />
+    </div>
+  )
+  return (
+    <div className="br-skel" role="status" aria-live="polite">
+      {side('From')}
+      <div className="br-flip-row"><span className="br-flip br-flip-load" aria-hidden><ArrowDownUp size={18} strokeWidth={2.4} /></span></div>
+      {side('To')}
+      <div className="br-skel-route" aria-hidden>
+        <span className="br-skel-node"><Chain id="eth" size={22} /></span>
+        <span className="br-skel-track"><i /><i /><i /></span>
+        <span className="br-skel-node"><Token symbol="USDC" size={22} /></span>
+        <span className="br-skel-track"><i /><i /><i /></span>
+        <span className="br-skel-node bch"><Chain id="bch" size={22} /></span>
+      </div>
+      <p className="br-skel-note">Finding stablecoin routes<span className="br-dots"><i>.</i><i>.</i><i>.</i></span></p>
+    </div>
   )
 }
 
