@@ -1,0 +1,13 @@
+{
+  // Static SPA on Workers assets. Mainnet: `npm run deploy`. Shield demo on chipnet: `npm run deploy:chipnet`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "unlinked",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "env": {
+    "chipnet": {
+      "name": "unlinked-chipnet",
+      "assets": { "directory": "./dist-chipnet", "not_found_handling": "single-page-application" }
+    }
+  }
+}
