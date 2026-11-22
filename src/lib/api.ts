@@ -43,3 +43,4 @@ export const xchainTokens = () => call<XToken[]>('/api/xchain/tokens')
 export const xchainQuote = ({ data }: { data: { originAsset: string; destinationAsset?: string; amount: string; recipient: string; refundTo: string; dry?: boolean } }) =>
   call<XQuote | { error: string }>('/api/xchain/quote', { body: data })
 export const xchainStatus = ({ data }: { data: { depositAddress: string } }) => call<XStatus>('/api/xchain/status', { query: data })
+export const xchainSubmit = ({ data }: { data: { txHash: string; depositAddress: string } }) => call<{ ok: true; status: XStatus }>('/api/xchain/submit', { body: data })

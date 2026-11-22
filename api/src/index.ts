@@ -152,6 +152,18 @@ async function route(req: Request, env: Env): Promise<Response> {
       })
     }
 
+    case 'POST /api/xchain/submit': {
+      // tells 1Click about the deposit tx, so it doesn't wait for its own (slow on some chains) detection
+      const field = (x: unknown) => (typeof x === 'string' && x.trim() && x.trim().length <= 200 ? x.trim() : null)
+      const txHash = field(body.txHash)
+      const depositAddress = field(body.depositAddress)
+      if (!txHash || !depositAddress) return json({ error: 'Enter a transaction hash.' }, 400)
+      const r = await fetch(`${ONECLICK}/deposit/submit`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ txHash, depositAddress }) })
+      const j = (await r.json().catch(() => ({}))) as { status?: string; message?: string }
+      if (!r.ok) return json({ error: r.status < 500 && j.message ? j.message : "Couldn't send it. Check the hash and try again." }, 502)
+      return json({ ok: true, status: j.status ?? 'UNKNOWN' })
+    }
+
     case 'GET /api/xchain/status': {
       const r = await fetch(`${ONECLICK}/status?depositAddress=${encodeURIComponent(str(q.get('depositAddress'), 120))}`)
       if (!r.ok) return json('UNKNOWN')
