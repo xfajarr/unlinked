@@ -1,0 +1,12 @@
+{
+  // Unlinked API Worker. Local: `npm run dev` (port 8790, local D1). Remote: create the DB once with
+  // `wrangler d1 create unlinked-api`, paste its id below, then `npm run deploy`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "unlinked-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "unlinked-api", "database_id": "f8fa094b-f5b8-4702-bca3-f37290471783", "migrations_dir": "migrations" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "unlinked-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply unlinked-api --local && wrangler dev --port 8790",
+    "deploy": "wrangler d1 migrations apply unlinked-api --remote && wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "*",
+    "typescript": "^6.0.2",
+    "wrangler": "^4.157.0"
+  }
+}
