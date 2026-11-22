@@ -1,6 +1,6 @@
-export const DECK_URL = 'https://docs.google.com/presentation/d/REPLACE_WITH_DECK'
+export const DECK_URL = '/deck.pdf'
 export const REPO_URL = 'https://github.com/xfajarr/unlinked'
-export const DONATION_ADDRESS = 'bitcoincash:zREPLACE_WITH_CASHTOKENS_ADDRESS'
+export const DONATION_ADDRESS = 'bitcoincash:zzrr98hr44wsjsfy23vngr9acml5eyh53ucvrtgx2x'
 
 export const APP_HOST = 'unlinked.cash'
 /** Handle the landing's "See a pay page" button opens; empty hides the button. */
