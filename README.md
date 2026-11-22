@@ -49,6 +49,7 @@ Built for BCH BLAZE 2026. Live app: https://getunlinked.pages.dev. Pitch deck: h
 | `api/` | The API: a Cloudflare Worker and D1. It holds profiles (public keys), the announcement board and a NEAR Intents proxy. |
 | `shield/circuits/` | The circom circuit and the setup scripts. `build/` holds the verification key and the zkey hash. |
 | `shield/contracts/` | The SolidCash pool, the verifier build and patch, VM test suites, and the deploy and end-to-end scripts. |
+| `shield/contracts/test/solidhat/` | The SolidHat suite (`npm run test:solidhat`): the pool's genesis, deposit, transfer and withdraw with real proofs on SolidHat's mock network, plus 11 rejects at the exact `require`. |
 | `shield/lib/`, `shield/tx/` | Witness generation, the trees and payload encoding (shared by the circuit tests and the app), and the browser transaction builder. |
 | `shield/deployments/` | Deployed pool parameters per network. |
 

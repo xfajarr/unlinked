@@ -7,11 +7,18 @@
     "build": "solidc ShieldPool.scash -o build/ShieldPool.json",
     "standin:setup": "sh standin/setup.sh",
     "test": "node --test --test-concurrency=1 test/standin.test.mjs",
-    "test:real": "node --test test/real-chain.test.mjs"
+    "test:real": "node --test test/real-chain.test.mjs",
+    "test:solidhat": "solidhat test",
+    "solidhat:compile": "solidhat compile",
+    "solidhat:clean": "solidhat clean"
   },
   "dependencies": {
     "@noble/curves": "^1.9.7",
     "@solidcash/solidc": "^0.51.1",
     "@solidcash/solidcash": "^0.51.1"
+  },
+  "devDependencies": {
+    "@solidcash/solidhat": "^0.51.1",
+    "vitest": "^5.1.1"
   }
 }

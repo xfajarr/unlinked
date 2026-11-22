@@ -17,6 +17,7 @@ sh standin/setup.sh <circom 2.2.2> <ppot_0080_12.ptau>   # TEST-ONLY stand-in ke
 node verifier/build.mjs <verification_key.json> <categoryHex> <out.build.json>   # verifier for a key + pool category, about 5 s
 node --test --test-concurrency=1 test/standin.test.mjs     # 37 tests, stand-in key, about 30 s -> build/standin.report.json
 node --test --test-concurrency=1 test/real-chain.test.mjs  # 15 tests, real CP2a key + fixtures/chain.json -> build/real.report.json
+npm run test:solidhat                           # SolidHat suite, 20 tests on the strict mock, about 4 s (see "SolidHat suite")
 FUNDING_KEY=<hex> node genesis.mjs <build.json> <fundingTxid> <sats> <S_genesis hex>   # offline: prints a signed genesis tx
 ```
 
@@ -133,6 +134,45 @@ its instruction pointer to the `require` line through the artifact's `debug.requ
   is fine for the contract (libauth does not check fee rate), but a BCHN mempool at the 1 sat/B relay minimum rejects
   it. Clients must set `fee ≥ txBytes` (about 29,000 sat), which is within `MAX_FEE`.
 
+## SolidHat suite (`npm run test:solidhat`)
+
+```sh
+cd shield/contracts
+npm run test:solidhat    # solidhat compile (artifacts/solidcash/), then Vitest with vitest.solidhat.config.js
+```
+
+- **Setup:** `@solidcash/solidhat` 0.51.1 and `vitest` 5 as npm dev dependencies, initialized with
+  `solidhat --init --template javascript`. `solidcash.config.js` sets contracts `.`, tests `test/solidhat/` and plain
+  `solidc` options, so the artifact is byte-identical to `build/ShieldPool.json`. Only mock networks are configured.
+- **Network:** the default `strict` mock has BCH limits (input and stack item 10,000 B, transaction 100,000 B,
+  commitment 128 B, op budget 800 per byte) with dust and standardness on. The full transactions fit.
+- **Covered** (`test/solidhat/ShieldPool.test.mjs`, 20 tests):
+  - Artifact: SolidHat's compile matches the deployed bytecode. With the deployed parameters it reproduces the
+    mainnet pool redeem and lock and the verifier lock (`deployments/mainnet.json`).
+  - Lifecycle: genesis from a mock coin at the mainnet funding outpoint, so the category is the mainnet one. Then
+    deposit, transfer and withdraw with the real proofs of `fixtures/chain.json`, as full transactions (3 verifier
+    inputs, pool, funding). The mock accepts each one. The tests then read its UTXO set: pool value, category,
+    mutable NFT, commitment S1, old pool coin spent, verifier coins recreated, payout.
+  - 11 rejects, each refused by the mock at input 3 and asserted with `toBeRevertedWith` on the
+    `ShieldPool.scash:<line>` require: stale proof (wrong S0), payout lock, payout 1 sat short, fee 50,001, pool value
+    skimmed, extra output on a transfer and on a withdraw, NFT moved, NFT downgraded, verifier coin not recreated,
+    extData tampered (H).
+  - A statement the proof does not prove is refused by the verifier coins (input 2). The unmodified withdraw is
+    accepted on the same pre-state.
+- **How:**
+  - The preset resets the mock before every test, so each step is a named `loadFixture` (`depositReady`,
+    `depositSent`, ...) on top of the previous one.
+  - The mock reports only the failing input. The suite finds the failing instruction with `pool.mjs`'s VM and maps
+    it through the artifact's `debug.requires` into SolidCash's `FailedRequireError`.
+- **Sponsor input:** the fixtures' pool-paid fees (2,000 and 3,000 sat) are under the mock's 1 sat/B relay floor.
+  Transfer and withdraw therefore carry one extra 30,000 sat P2PKH input and no change. The pool and the verifier
+  GRAPH allow extra inputs, so the covenant rules are the same.
+- **Fee 50,001** uses the real withdraw proof, so its binding would fail too. `fee <= 50000` is simply the first guard
+  that fires. The honestly bound case is in the stand-in suite.
+- **Op-cost caveat:** SolidCash's pinned libauth under-counts `OP_DEFINE` against BCHN (solidcash/solidcash#20,
+  bitauth/libauth#166), so this mock can be more permissive on op cost than mainnet. Its hash-iteration limit also
+  stays relaxed. `test/real-chain.test.mjs`, on the patched libauth, stays the authority on op-cost margins.
+
 ## Design notes and residual risks
 
 - **Statement binding** is complete: n0 = S0 (pool NFT), and n1 = H over every value the pool's next state and payout
@@ -172,6 +212,7 @@ its instruction pointer to the `require` line through the artifact's `debug.requ
 - `verifier/build.mjs`, `verifier/PATCH.md`, `verifier/PATCH.diff`, `verifier/upstream/` (vendored, ISC).
 - `standin/`: **TEST ONLY** free-statement circuit, key and prover. Never deploy it.
 - `test/harness.mjs`, `test/standin.test.mjs`, `test/real-chain.test.mjs`.
+- `test/solidhat/ShieldPool.test.mjs`, `solidcash.config.js`, `vitest.solidhat.config.js`: the SolidHat suite.
 - `build/*.build.json` (verifier builds), `build/*.report.json` (results).
 
 ## CP3b: browser builder and chipnet
