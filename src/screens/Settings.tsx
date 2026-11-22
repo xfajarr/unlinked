@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server, Timer } from 'lucide-react'
+import { Check, ChevronRight, KeyRound, Loader2, Lock, LogOut, RefreshCw, Server, Timer } from 'lucide-react'
 import { Avatar, CopyButton, Modal, ModalCancel, Switch } from '../ui'
 import { go } from '../App'
 import { useAccount } from '../app/account'
@@ -11,7 +11,7 @@ import { FULCRUM_SERVERS, NETWORK } from '../lib/config'
 import { AUTOLOCK_OPTIONS, getAutoLock } from '../lib/session'
 import { forget, lock, markBackedUp, setAutoLock, vaultKind, type VaultKind } from '../lib/vault'
 
-function RecoveryPhrase({ backedUp, kind, onDone }: { backedUp: boolean; kind: VaultKind; onDone: () => void }) {
+export function RecoveryPhrase({ backedUp, kind, onDone }: { backedUp: boolean; kind: VaultKind; onDone: () => void }) {
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -75,7 +75,7 @@ function RecoveryPhrase({ backedUp, kind, onDone }: { backedUp: boolean; kind: V
 
 export default function Settings() {
   const { stored, history, rescan, items } = useAccount()
-  const [modal, setModal] = useState<'phrase' | 'servers' | 'forget' | null>(() =>
+  const [modal, setModal] = useState<'phrase' | 'servers' | 'forget' | 'autolock' | null>(() =>
     new URLSearchParams(window.location.search).has('backup') ? 'phrase' : null,
   )
   const [rescanning, setRescanning] = useState(false)
@@ -122,22 +122,11 @@ export default function Settings() {
           <span className="muted" style={{ marginLeft: 'auto', fontSize: 16 }}>{NETWORK}</span>
           <ChevronRight className="chev" size={22} style={{ marginLeft: 8 }} />
         </button>
-        <label className="nav-row" style={{ cursor: 'pointer' }}>
+        <button className="nav-row" onClick={() => setModal('autolock')}>
           <span className="ico"><Timer size={24} /></span>Auto-lock
-          <select
-            className="muted"
-            style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: 0, font: 'inherit', fontSize: 16, textAlign: 'right', cursor: 'pointer', padding: '4px 0' }}
-            value={autoLock}
-            onChange={(e) => {
-              const min = Number(e.target.value)
-              setAutoLockState(min)
-              setAutoLock(min)
-            }}
-          >
-            {AUTOLOCK_OPTIONS.map((o) => <option key={o.min} value={o.min}>{o.label}</option>)}
-          </select>
-          <ChevronDown className="chev" size={22} style={{ marginLeft: 8, pointerEvents: 'none' }} />
-        </label>
+          <span className="muted" style={{ marginLeft: 'auto', fontSize: 16 }}>{AUTOLOCK_OPTIONS.find((o) => o.min === autoLock)?.label}</span>
+          <ChevronRight className="chev" size={22} style={{ marginLeft: 8 }} />
+        </button>
         <button className="nav-row" onClick={lock}>
           <span className="ico"><Lock size={24} /></span>Lock
         </button>
@@ -149,6 +138,25 @@ export default function Settings() {
       {modal === 'phrase' && (
         <Modal title="Recovery phrase" onClose={() => setModal(null)}>
           <RecoveryPhrase backedUp={stored.backedUp} kind={vaultKind(stored)} onDone={() => setModal(null)} />
+        </Modal>
+      )}
+      {modal === 'autolock' && (
+        <Modal title="Auto-lock" onClose={() => setModal(null)}>
+          <p className="muted" style={{ margin: '0 0 12px', fontSize: 15 }}>Lock the app after this long without use. Until then, a refresh keeps you signed in.</p>
+          <div className="stack" style={{ gap: 8 }}>
+            {AUTOLOCK_OPTIONS.map((o) => (
+              <button
+                key={o.min}
+                type="button"
+                className={`choice${o.min === autoLock ? ' on' : ''}`}
+                aria-pressed={o.min === autoLock}
+                onClick={() => { setAutoLockState(o.min); setAutoLock(o.min); setModal(null) }}
+              >
+                <span className="choice-name" style={{ flex: 1 }}>{o.label}</span>
+                {o.min === autoLock && <Check size={20} strokeWidth={2.6} style={{ color: 'var(--blue-11, #2563eb)' }} />}
+              </button>
+            ))}
+          </div>
         </Modal>
       )}
       {modal === 'servers' && (
