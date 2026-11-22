@@ -8,9 +8,10 @@ import { checkHandle, claimHandle } from '../lib/api'
 import { XCHAIN_ENABLED } from '../lib/config'
 import { createVault, forget, markBackedUp, useVault } from '../lib/vault'
 import { HANDLE_RE, errMsg, linkFor, linkHost, normalizeHandleInput } from '../app/format'
+import { clearPinFails, PIN_LENGTH, PinInput } from '../app/Pin'
 import { restoreVault } from '../app/vaultio'
 
-type Step = 'welcome' | 'claim' | 'password' | 'working' | 'backup' | 'done' | 'restore'
+type Step = 'welcome' | 'claim' | 'pin' | 'confirm' | 'working' | 'backup' | 'done' | 'restore'
 type HandleStatus = 'invalid' | 'checking' | 'available' | 'taken' | 'error'
 
 function useHandleStatus(handle: string): [HandleStatus, (s: HandleStatus) => void] {
@@ -32,29 +33,16 @@ function useHandleStatus(handle: string): [HandleStatus, (s: HandleStatus) => vo
   return [status, setStatus]
 }
 
-const pwError = (pw: string, pw2: string) =>
-  pw.length > 0 && pw.length < 8 ? 'Use at least 8 characters.' : pw2.length > 0 && pw !== pw2 ? 'Passwords don’t match.' : null
-const pwReady = (pw: string, pw2: string) => pw.length >= 8 && pw === pw2
-
-function PasswordFields({ pw, pw2, onPw, onPw2, onEnter }: { pw: string; pw2: string; onPw: (v: string) => void; onPw2: (v: string) => void; onEnter?: () => void }) {
-  const err = pwError(pw, pw2)
-  return (
-    <div className="stack" style={{ gap: 10, width: '100%' }}>
-      <input className="field" type="password" placeholder="Password" aria-label="Password" value={pw} onChange={(e) => onPw(e.target.value)} autoComplete="new-password" autoFocus={!!onEnter} />
-      <input className="field" type="password" placeholder="Type it again" aria-label="Confirm password" value={pw2} onChange={(e) => onPw2(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onEnter?.()} autoComplete="new-password" />
-      <p className={err ? 'ap-err' : 'ap-hint'} aria-live="polite">{err ?? 'At least 8 characters. We can’t reset it for you.'}</p>
-    </div>
-  )
-}
-
 export default function Onboarding() {
   const { stored } = useVault()
   const restoring = new URLSearchParams(window.location.search).has('restore')
   const [step, setStep] = useState<Step>(restoring ? 'restore' : 'welcome')
   const [handle, setHandle] = useState('')
   const [status, setStatus] = useHandleStatus(handle)
-  const [pw, setPw] = useState('')
-  const [pw2, setPw2] = useState('')
+  const [flow, setFlow] = useState<'create' | 'restore'>(restoring ? 'restore' : 'create')
+  const [pin, setPin] = useState('')
+  const [pin2, setPin2] = useState('')
+  const [pinErr, setPinErr] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mnemonic, setMnemonic] = useState('')
   const [revealed, setRevealed] = useState(false)
@@ -67,38 +55,52 @@ export default function Onboarding() {
     if (stored && !started.current && !restoring) go('/dashboard')
   }, [stored, restoring])
 
+  const clearPins = () => {
+    setPin('')
+    setPin2('')
+    setPinErr(false)
+  }
   const back = () => {
     setError(null)
+    clearPins()
     if (step === 'restore') return restoring ? go('/dashboard') : setStep('welcome')
-    const prev = { claim: 'welcome', password: 'claim' } as const
+    if (step === 'pin') return setStep(flow === 'restore' ? 'restore' : 'claim')
+    const prev = { claim: 'welcome', confirm: 'pin' } as const
     if (step in prev) setStep(prev[step as keyof typeof prev])
   }
+  const toPin = (f: 'create' | 'restore') => {
+    setFlow(f)
+    clearPins()
+    setStep('pin')
+  }
 
-  async function claim() {
-    if (!pwReady(pw, pw2) || status !== 'available') return
+  async function claim(newPin: string) {
+    if (newPin.length !== PIN_LENGTH || status !== 'available') return
     started.current = true
     setError(null)
     setStep('working')
     try {
       // the mnemonic stays on this device: only the public keys (and the Shield key) go to the server
-      const { mnemonic, ...pub } = await createVault(handle, pw)
+      const { mnemonic, ...pub } = await createVault(handle, newPin)
       const r = await claimHandle({ data: { handle, ...pub } }).catch((err) => ({ ok: false as const, error: errMsg(err) }))
       if (!r.ok) {
         forget()
         started.current = false
         setError(r.error)
         if (/taken/i.test(r.error)) setStatus('taken')
+        clearPins()
         setStep('claim')
         return
       }
-      setPw('')
-      setPw2('')
+      clearPins()
+      clearPinFails()
       setMnemonic(mnemonic)
       setStep('backup')
     } catch (err) {
       forget()
       started.current = false
       setError(errMsg(err))
+      clearPins()
       setStep('claim')
     }
   }
@@ -106,20 +108,22 @@ export default function Onboarding() {
   const phrase = words.trim().toLowerCase().split(/\s+/).filter(Boolean).join(' ')
   const wordCount = phrase ? phrase.split(' ').length : 0
   const phraseOk = wordCount === 12 && validateMnemonic(phrase, wordlist)
-  const restoreReady = HANDLE_RE.test(handle) && phraseOk && pwReady(pw, pw2)
+  const restoreReady = HANDLE_RE.test(handle) && phraseOk
 
-  async function restore() {
-    if (!restoreReady) return
+  async function restore(newPin: string) {
+    if (!restoreReady || newPin.length !== PIN_LENGTH) return
     started.current = true
     setError(null)
     setStep('working')
     try {
-      await restoreVault(handle, phrase, pw)
+      await restoreVault(handle, phrase, newPin)
+      clearPinFails()
       setWords('')
       go('/dashboard')
     } catch (err) {
       started.current = false
       setError(errMsg(err))
+      clearPins()
       setStep('restore')
     }
   }
@@ -130,7 +134,7 @@ export default function Onboarding() {
     <div className="shell">
       <header className="topbar">
         <div className="topbar-left">
-          {step === 'claim' || step === 'password' || step === 'restore' ? (
+          {step === 'claim' || step === 'pin' || step === 'confirm' || step === 'restore' ? (
             <button className="orb" onClick={back} aria-label="Back"><ArrowLeft size={22} strokeWidth={2.2} /></button>
           ) : <Logo />}
         </div>
@@ -175,7 +179,7 @@ export default function Onboarding() {
                 value={handle}
                 maxLength={20}
                 onChange={(e) => { setHandle(normalizeHandleInput(e.target.value)); setError(null) }}
-                onKeyDown={(e) => e.key === 'Enter' && status === 'available' && setStep('password')}
+                onKeyDown={(e) => e.key === 'Enter' && status === 'available' && toPin('create')}
                 aria-label="Username"
                 aria-describedby="handle-status"
                 spellCheck={false}
@@ -206,29 +210,48 @@ export default function Onboarding() {
             </div>
 
             <div className="sticky-cta">
-              <button className="btn btn-primary block" disabled={status !== 'available'} onClick={() => setStep('password')}>
+              <button className="btn btn-primary block" disabled={status !== 'available'} onClick={() => toPin('create')}>
                 Continue
               </button>
             </div>
           </div>
         )}
 
-        {step === 'password' && (
+        {(step === 'pin' || step === 'confirm') && (
           <div className="stack center pin-step">
             <div>
-              <h1 className="page-title">Set a password</h1>
-              <p className="page-sub">It unlocks Unlinked on this device.</p>
+              <h1 className="page-title">{step === 'confirm' ? 'Confirm your PIN' : flow === 'restore' ? 'Set a new PIN' : 'Set a PIN'}</h1>
+              <p className="page-sub">{step === 'confirm' ? 'Enter the same 6 digits again.' : '6 digits that unlock Unlinked on this device.'}</p>
             </div>
-            <PasswordFields pw={pw} pw2={pw2} onPw={setPw} onPw2={setPw2} onEnter={claim} />
-            <button className="btn btn-primary block" disabled={!pwReady(pw, pw2)} onClick={claim}>Claim @{handle}</button>
+            <div className="pin-wrap">
+              <PinInput
+                key={step}
+                value={step === 'pin' ? pin : pin2}
+                error={pinErr}
+                label={step === 'pin' ? 'New 6-digit PIN' : 'Confirm your PIN'}
+                onChange={(v) => {
+                  setPinErr(false)
+                  if (step === 'pin') {
+                    setPin(v)
+                    if (v.length === PIN_LENGTH) setTimeout(() => setStep('confirm'), 180)
+                    return
+                  }
+                  setPin2(v)
+                  if (v.length < PIN_LENGTH) return
+                  if (v !== pin) return void setTimeout(() => { setPinErr(true); setPin2('') }, 180)
+                  setTimeout(() => void (flow === 'restore' ? restore(v) : claim(v)), 180)
+                }}
+              />
+              <p className="pin-error" aria-live="polite">{pinErr ? 'PINs don’t match. Try again.' : ''}</p>
+            </div>
             <div className="pin-note">
               <div className="pin-note-head">
                 <span className="pin-note-ico"><ShieldCheck size={20} strokeWidth={2.2} /></span>
-                <div className="pin-note-title">What’s this password for?</div>
+                <div className="pin-note-title">What’s this PIN for?</div>
               </div>
               <ul className="pin-points">
-                <li><Lock size={16} strokeWidth={2.2} /><span>It encrypts your keys on this device, so nobody else can move your money.</span></li>
-                <li><KeyRound size={16} strokeWidth={2.2} /><span>Forgot it? Your <b>12-word recovery phrase</b> gets you back in.</span></li>
+                <li><Lock size={16} strokeWidth={2.2} /><span>It unlocks the app on this device and keeps your keys encrypted here, so nobody else can move your money.</span></li>
+                <li><KeyRound size={16} strokeWidth={2.2} /><span>Your <b>12-word recovery phrase</b> is the real backup. Forgot the PIN? The 12 words get you back in.</span></li>
               </ul>
             </div>
           </div>
@@ -238,7 +261,7 @@ export default function Onboarding() {
           <div className="stack center onb-welcome" aria-live="polite">
             <Loader2 size={40} className="spin" style={{ color: 'var(--blue-9)' }} />
             <div>
-              <h1 className="page-title">{restoring || words ? 'Restoring your account' : 'Creating your keys'}</h1>
+              <h1 className="page-title">{flow === 'restore' ? 'Restoring your account' : 'Creating your keys'}</h1>
               <p className="page-sub">This takes a few seconds. Your keys never leave this device.</p>
             </div>
           </div>
@@ -304,7 +327,7 @@ export default function Onboarding() {
           <div className="stack center pin-step">
             <div>
               <h1 className="page-title">Restore your account</h1>
-              <p className="page-sub">Enter your username and your 12 words, then set a new password for this device.</p>
+              <p className="page-sub">Enter your username and your 12 words, then set a new PIN for this device.</p>
             </div>
             <div className="stack" style={{ gap: 10, width: '100%' }}>
               <div className="field-wrap">
@@ -326,9 +349,8 @@ export default function Onboarding() {
                 {wordCount === 12 && !phraseOk ? 'One of these words is wrong. Check the spelling and order.' : `${wordCount} of 12 words`}
               </p>
             </div>
-            <PasswordFields pw={pw} pw2={pw2} onPw={setPw} onPw2={setPw2} />
             {error && <p className="ap-err" role="alert">{error}</p>}
-            <button className="btn btn-primary block" disabled={!restoreReady} onClick={restore}>Restore</button>
+            <button className="btn btn-primary block" disabled={!restoreReady} onClick={() => toPin('restore')}>Continue</button>
             {stored && <p className="ap-hint">This replaces the account saved on this device (@{stored.handle}).</p>}
           </div>
         )}

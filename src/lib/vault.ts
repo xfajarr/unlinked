@@ -22,7 +22,11 @@ async function shieldPkFor(spendPriv: Uint8Array): Promise<string | undefined> {
 }
 
 const KEY = 'unlinked.vault.v1'
-type Stored = { handle: string; salt: string; iv: string; data: string; backedUp: boolean; scanPub: string; spendPub: string }
+/** kind: older vaults have no kind and were locked with a free-form password */
+type Stored = { handle: string; salt: string; iv: string; data: string; backedUp: boolean; scanPub: string; spendPub: string; kind?: 'pin' | 'password' }
+export type VaultKind = 'pin' | 'password'
+export const vaultKind = (s: { kind?: VaultKind } | null | undefined): VaultKind => (s?.kind === 'pin' ? 'pin' : 'password')
+export const wrongSecret = (kind: VaultKind) => (kind === 'pin' ? 'Wrong PIN' : 'Wrong password')
 
 const enc = new TextEncoder(), dec = new TextDecoder()
 const b64 = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b as ArrayBuffer)))
@@ -118,17 +122,17 @@ export function setAutoLock(min: number) {
   else void clearSession()
 }
 
-export async function createVault(handle: string, password: string) {
+export async function createVault(handle: string, pin: string) {
   const { newMnemonic, keysFromMnemonic } = await stealth()
   const mnemonic = newMnemonic()
   const keys = keysFromMnemonic(mnemonic)
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12))
   const shieldPkP = shieldPkFor(keys.spendPriv) // overlaps with PBKDF2
-  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(password, salt), enc.encode(mnemonic))
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(pin, salt), enc.encode(mnemonic))
   const shieldPk = await shieldPkP
   state = { ...state, keys, mnemonic }
   startSession(mnemonic)
-  write({ handle, salt: b64(salt), iv: b64(iv), data: b64(data), backedUp: false, scanPub: binToHex(keys.scanPub), spendPub: binToHex(keys.spendPub) })
+  write({ handle, salt: b64(salt), iv: b64(iv), data: b64(data), backedUp: false, scanPub: binToHex(keys.scanPub), spendPub: binToHex(keys.spendPub), kind: 'pin' })
   return { mnemonic, scanPub: binToHex(keys.scanPub), spendPub: binToHex(keys.spendPub), authPub: binToHex(keys.authPub), shieldPk }
 }
 
@@ -143,7 +147,7 @@ export async function unlock(password: string): Promise<void> {
     startSession(mnemonic)
     emit()
   } catch {
-    throw new Error('Wrong password')
+    throw new Error(wrongSecret(vaultKind(s)))
   }
 }
 

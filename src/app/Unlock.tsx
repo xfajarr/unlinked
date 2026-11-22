@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Avatar, Logo } from '../ui'
 import { go } from '../App'
-import { unlock, useVault } from '../lib/vault'
+import { unlock, useVault, vaultKind } from '../lib/vault'
 import { errMsg } from './format'
+import { PinEntry } from './Pin'
 
 export default function Unlock({ handle }: { handle: string }) {
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { restoring } = useVault()
+  const { restoring, stored } = useVault()
+  const pin = vaultKind(stored) === 'pin'
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,7 +34,19 @@ export default function Unlock({ handle }: { handle: string }) {
         <div />
       </header>
       <main className="main narrow">
-        {!restoring && <form className="stack center ap-gate" onSubmit={submit}>
+        {!restoring && pin && (
+          <div className="stack center ap-gate">
+            <div style={{ display: 'inline-block' }}><Avatar handle={handle} size={76} /></div>
+            <div>
+              <h1 className="page-title">Welcome back</h1>
+              <p className="page-sub">@{handle}</p>
+            </div>
+            <p className="muted" style={{ margin: 0, fontSize: 15 }}>Enter your PIN to unlock.</p>
+            <PinEntry verify={unlock} busyLabel="Unlocking" />
+            <button type="button" className="btn-ghost" onClick={() => go('/onboarding?restore=1')}>Forgot your PIN? Use your 12 words</button>
+          </div>
+        )}
+        {!restoring && !pin && <form className="stack center ap-gate" onSubmit={submit}>
           <div style={{ display: 'inline-block' }}><Avatar handle={handle} size={76} /></div>
           <div>
             <h1 className="page-title">Welcome back</h1>

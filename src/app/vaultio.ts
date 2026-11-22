@@ -2,7 +2,7 @@
 // format (PBKDF2-SHA256 600k, AES-256-GCM); restore finishes with vault.unlock(), so a format drift fails loudly.
 import { getProfile } from '../lib/api'
 import { toHex } from '../lib/hex'
-import { unlock } from '../lib/vault'
+import { unlock, vaultKind, wrongSecret } from '../lib/vault'
 
 const KEY = 'unlinked.vault.v1'
 const enc = new TextEncoder(), dec = new TextDecoder()
@@ -14,7 +14,7 @@ async function aesKey(password: string, salt: Uint8Array<ArrayBuffer>) {
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 600_000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
 }
 
-export async function restoreVault(handle: string, mnemonic: string, password: string) {
+export async function restoreVault(handle: string, mnemonic: string, pin: string) {
   const { keysFromMnemonic } = await import('../lib/stealth')
   const keys = keysFromMnemonic(mnemonic)
   const scanPub = toHex(keys.scanPub), spendPub = toHex(keys.spendPub)
@@ -22,19 +22,19 @@ export async function restoreVault(handle: string, mnemonic: string, password: s
   if (!profile) throw new Error(`No one has the name @${handle}.`)
   if (profile.scanPub !== scanPub || profile.spendPub !== spendPub) throw new Error(`These words don't belong to @${handle}.`)
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12))
-  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(password, salt), enc.encode(mnemonic))
-  localStorage.setItem(KEY, JSON.stringify({ handle, salt: b64(salt), iv: b64(iv), data: b64(data), backedUp: true, scanPub, spendPub }))
-  await unlock(password)
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(pin, salt), enc.encode(mnemonic))
+  localStorage.setItem(KEY, JSON.stringify({ handle, salt: b64(salt), iv: b64(iv), data: b64(data), backedUp: true, scanPub, spendPub, kind: 'pin' }))
+  await unlock(pin)
 }
 
-/** The 12 words, only with the right password. Doesn't touch the unlocked session. */
+/** The 12 words, only with the right PIN (or password, for older vaults). Doesn't touch the unlocked session. */
 export async function revealWords(password: string): Promise<string> {
-  const s = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { salt: string; iv: string; data: string } | null
+  const s = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { salt: string; iv: string; data: string; kind?: 'pin' | 'password' } | null
   if (!s) throw new Error('No account on this device')
   try {
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(s.iv) }, await aesKey(password, unb64(s.salt)), unb64(s.data))
     return dec.decode(plain)
   } catch {
-    throw new Error('Wrong password')
+    throw new Error(wrongSecret(vaultKind(s)))
   }
 }

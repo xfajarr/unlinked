@@ -5,12 +5,13 @@ import { go } from '../App'
 import { useAccount } from '../app/account'
 import { clearHistory } from '../app/history'
 import { errMsg, fmtBch, linkHost } from '../app/format'
+import { PinEntry } from '../app/Pin'
 import { revealWords } from '../app/vaultio'
 import { FULCRUM_SERVERS, NETWORK } from '../lib/config'
 import { AUTOLOCK_OPTIONS, getAutoLock } from '../lib/session'
-import { forget, lock, markBackedUp, setAutoLock } from '../lib/vault'
+import { forget, lock, markBackedUp, setAutoLock, vaultKind, type VaultKind } from '../lib/vault'
 
-function RecoveryPhrase({ backedUp, onDone }: { backedUp: boolean; onDone: () => void }) {
+function RecoveryPhrase({ backedUp, kind, onDone }: { backedUp: boolean; kind: VaultKind; onDone: () => void }) {
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,6 +33,14 @@ function RecoveryPhrase({ backedUp, onDone }: { backedUp: boolean; onDone: () =>
     }
   }
 
+  if (!words && kind === 'pin') {
+    return (
+      <div className="stack center" style={{ gap: 12 }}>
+        <p className="muted" style={{ margin: 0, fontSize: 15 }}>Enter your PIN to see your 12 words.</p>
+        <PinEntry verify={async (pin) => setWords(await revealWords(pin))} busyLabel="Checking" />
+      </div>
+    )
+  }
   if (!words) {
     return (
       <form className="stack" style={{ gap: 12 }} onSubmit={reveal}>
@@ -139,7 +148,7 @@ export default function Settings() {
 
       {modal === 'phrase' && (
         <Modal title="Recovery phrase" onClose={() => setModal(null)}>
-          <RecoveryPhrase backedUp={stored.backedUp} onDone={() => setModal(null)} />
+          <RecoveryPhrase backedUp={stored.backedUp} kind={vaultKind(stored)} onDone={() => setModal(null)} />
         </Modal>
       )}
       {modal === 'servers' && (

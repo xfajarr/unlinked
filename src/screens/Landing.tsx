@@ -42,7 +42,7 @@ const BELT = [
 const MORE = [
   { icon: Repeat, title: 'Any token, any chain', body: 'Payers send USDC, USDT, ETH, SOL or BCH. It arrives as BCH, swapped through NEAR Intents.' },
   { icon: ShieldCheck, title: 'Private by default', body: 'Each payment moves into Unlinked Shield, a zero-knowledge pool that Bitcoin Cash checks on-chain. Whoever paid you can’t follow where it goes next.' },
-  { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with your password and backed up with 12 words. We never hold your money.' },
+  { icon: KeyRound, title: 'Your keys, your device', body: 'Locked with a PIN on your device and backed up with 12 words. We never hold your money.' },
 ]
 
 function Belt() {
@@ -98,7 +98,7 @@ const TOKEN_LIST: TokenId[] = ['BCH', 'USDC', 'USDT', 'ETH', 'SOL']
 const CHAIN_LIST: ChainId[] = ['bch', 'ethereum', 'base', 'arbitrum', 'solana', 'tron']
 
 const STEPS = [
-  { title: 'Claim your @username', body: 'Pick a name and a password. Your keys are made on your device, not on our servers.' },
+  { title: 'Claim your @username', body: 'Pick a name and a PIN. Your keys are made on your device, not on our servers.' },
   { title: 'Share one link', body: 'Post your link or show the QR. Add an amount when you want a set price.' },
   { title: 'Get paid privately', body: 'Every payment lands at a fresh BCH address only you can find, then moves into your private balance.' },
 ]
